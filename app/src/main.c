@@ -21,6 +21,9 @@ int main()
 	// Initialize LED pin
 	BSP_LED_Init();
 
+	// Initialize User-Button pin
+	BSP_PB_Init();
+
 	// Turn LED On
 	BSP_LED_On();
 
@@ -30,8 +33,16 @@ int main()
 
 	while(1)
 	{
-		// Toggle LED state
-		BSP_LED_Toggle();
+		// Turn LED On if User-Button is pushed down
+		if (BSP_PB_GetState() == 1)
+				{
+					BSP_LED_On();
+				}
+				// Otherwise turn LED Off
+				else
+				{
+					BSP_LED_Off();
+				}
 
 	}
 }
