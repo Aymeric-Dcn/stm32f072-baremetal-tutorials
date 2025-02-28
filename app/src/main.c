@@ -7,6 +7,7 @@
 
 
 #include "stm32f0xx.h"
+#include "bsp.h"
 
 // Static functions
 static void SystemClock_Config (void);
@@ -17,9 +18,21 @@ int main()
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Do nothing
+	// Initialize LED pin
+	BSP_LED_Init();
+
+	// Turn LED On
+	BSP_LED_On();
+
+	// Turn LED Off
+	BSP_LED_Off();
+
+
 	while(1)
 	{
+		// Toggle LED state
+		BSP_LED_Toggle();
+
 	}
 }
 
