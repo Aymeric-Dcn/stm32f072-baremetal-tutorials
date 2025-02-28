@@ -15,38 +15,42 @@ static void SystemClock_Config (void);
 // Main function
 int main()
 {
+	uint8_t	sent;
+
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize LED pin
+	// Initialize LED & Button pin
 	BSP_LED_Init();
-
-	// Initialize User-Button pin
 	BSP_PB_Init();
 
-	// Turn LED On
-	BSP_LED_On();
+	// Initialize Debug Console
+	BSP_Console_Init();
 
-	// Turn LED Off
-	BSP_LED_Off();
-
-
+	// Main loop
 	while(1)
 	{
-		// Turn LED On if User-Button is pushed down
+		// If User-Button is pushed down
 		if (BSP_PB_GetState() == 1)
-				{
-					BSP_LED_On();
-				}
-				// Otherwise turn LED Off
-				else
-				{
-					BSP_LED_Off();
-				}
+		{
+			BSP_LED_On();	// Keep LED On
 
+			// Send '#' only once
+			if (sent == 0)
+			{
+				while ((USART2->ISR & USART_ISR_TC) != USART_ISR_TC);
+				USART2->TDR = '#';
+				sent = 1;
+			}
+		}
+		// If User-Button is released
+		else
+		{
+			BSP_LED_Off();	// Keep LED Off
+			sent = 0;
+		}
 	}
 }
-
 /*
  * Clock configuration for the Nucleo STM32F072RB board
  * HSE input Bypass Mode            -> 8MHz
