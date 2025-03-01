@@ -14,45 +14,33 @@
 static void SystemClock_Config (void);
 
 // Main function
+// Main function
 int main()
 {
-	uint8_t	i, sent;
+	uint32_t	i;
 
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize LED & Button pin
-	BSP_LED_Init();
-	BSP_PB_Init();
-
 	// Initialize Debug Console
 	BSP_Console_Init();
-
 	my_printf("Console ready!\r\n");
-	sent = 0;
-	i = 0;
+
+	// Initialize and start ADC on PC1
+	BSP_ADC_Init();
+	my_printf("ADC ready!\r\n");
 
 	// Main loop
 	while(1)
 	{
-		// If User-Button is pushed down
-		if (BSP_PB_GetState() == 1)
-		{
-			BSP_LED_On();	// Keep LED On
-			// Send '#i' only once
-			if (sent == 0)
-			{
-				my_printf("#%d\r\n", i);
-				sent = 1;
-				i++;
-			}
-		}
-		// If User-Button is released
-		else
-		{
-			BSP_LED_Off();	// Keep LED Off
-			sent = 0;
-		}
+		// Wait here until ADC EOC
+		while ((ADC1->ISR & ADC_ISR_EOC) != ADC_ISR_EOC);
+
+		// Report result to console
+		my_printf("ADC value = %d\r\n", ADC1->DR);
+
+		// Wait about 200ms
+		for (i=0; i<500000; i++);
 	}
 }
 /*

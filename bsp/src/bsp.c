@@ -152,3 +152,49 @@ void BSP_Console_Init()
 	// Enable USART2
 	USART2->CR1 |= USART_CR1_UE;
 }
+
+/*
+ * ADC_Init()
+ * Initialize ADC for a single channel conversion
+ * on channel 11 -> pin PC1
+ */
+
+void BSP_ADC_Init()
+{
+	// Enable GPIOC clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+
+	// Configure pin PC1 as analog
+	GPIOC->MODER &= ~GPIO_MODER_MODER1_Msk;
+	GPIOC->MODER |= (0x03 <<GPIO_MODER_MODER1_Pos);
+
+	// Enable ADC clock
+	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+
+	// Reset ADC configuration
+	ADC1->CR 	= 0x00000000;
+	ADC1->CFGR1  = 0x00000000;
+	ADC1->CFGR2  = 0x00000000;
+	ADC1->CHSELR = 0x00000000;
+
+	// Enable continuous conversion mode
+	ADC1->CFGR1 |= ADC_CFGR1_CONT;
+
+	// 12-bit resolution
+	ADC1->CFGR1 |= (0x00 <<ADC_CFGR1_RES_Pos);
+
+	// Select PCLK/2 as ADC clock
+	ADC1->CFGR2 |= (0x01 <<ADC_CFGR2_CKMODE_Pos);
+
+	// Set sampling time to 28.5 ADC clock cycles
+	ADC1->SMPR = 0x03;
+
+	// Select channel 11
+	ADC1->CHSELR |= ADC_CHSELR_CHSEL11;
+
+	// Enable ADC
+	ADC1->CR |= ADC_CR_ADEN;
+
+	// Start conversion
+	ADC1->CR |= ADC_CR_ADSTART;
+}

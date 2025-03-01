@@ -33,4 +33,9 @@ uint8_t    BSP_PB_GetState	(void);
 
 void	BSP_Console_Init	(void);
 
+/*
+ * ADC functions
+ */
+void BSP_ADC_Init		(void);
+
 #endif /* INC_BSP_H_ */
