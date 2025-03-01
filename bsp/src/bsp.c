@@ -204,7 +204,7 @@ void BSP_ADC_Init()
  * TIM6 at 48MHz
  * Prescaler   = 48000 -> Counting period = 1ms
  * Auto-reload = 1000  -> Update period   = 1s
- */
+
 
 void BSP_TIMER_Timebase_Init()
 {
@@ -227,8 +227,38 @@ void BSP_TIMER_Timebase_Init()
 
 	// Start TIM6 counter
 	TIM6->CR1 |= TIM_CR1_CEN;
-}
+}*/
 
+
+
+/*BSP_TIMER_Timebase_Init()
+ * TIM6 at 48MHz
+ * Prescaler   = 48 -> Counting period = 1µs
+ * Auto-reload = 200  -> Update period   = 200µs
+ */
+
+void BSP_TIMER_Timebase_Init()
+{
+	// Enable TIM6 clock
+	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+
+	// Reset TIM6 configuration
+	TIM6->CR1 = 0x0000;
+	TIM6->CR2 = 0x0000;
+
+	// Set TIM6 prescaler
+	// Fck = 48MHz -> /48 = 1MHz counting frequency
+	TIM6->PSC = (uint16_t) 48 -1;
+
+	// Set TIM6 auto-reload register for 200µs period
+	TIM6->ARR = (uint16_t) 200 -1;
+
+	// Enable auto-reload preload
+	TIM6->CR1 |= TIM_CR1_ARPE;
+
+	// Start TIM6 counter
+	TIM6->CR1 |= TIM_CR1_CEN;
+}
 /*
  * BSP_TIMER_IC_Init()
  * TIM3 as Input Capture
@@ -373,3 +403,31 @@ void BSP_TIMER_PWM_Init()
 	// Enable TIM1
 	TIM1->CR1 |= TIM_CR1_CEN;
 }
+
+/*
+ * DAC_Init()
+ * Initialize DAC for a single output
+ * on channel 1 -> pin PA4
+ */
+
+void BSP_DAC_Init()
+{
+	// Enable GPIOA clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+
+	// Configure pin PA4 as analog
+	GPIOA->MODER &= ~GPIO_MODER_MODER4_Msk;
+	GPIOA->MODER |= (0x03 <<GPIO_MODER_MODER4_Pos);
+
+	// Enable DAC clock
+	RCC->APB1ENR |= RCC_APB1ENR_DACEN;
+
+	// Reset DAC configuration
+	DAC->CR = 0x00000000;
+
+	// Enable DAC Channel 1
+	DAC->CR |= DAC_CR_EN1;
+}
+
+
+

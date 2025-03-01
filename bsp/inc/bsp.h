@@ -55,4 +55,9 @@ void BSP_DELAY_TIM_ms		(uint16_t ms);
  */
 void BSP_TIMER_PWM_Init		(void);
 
+/*
+ * DAC initialization
+ */
+void BSP_DAC_Init		(void);
+
 #endif /* INC_BSP_H_ */

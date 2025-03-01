@@ -19,6 +19,7 @@ uint16_t	ADC_result;
 #include "stm32f0xx.h"
 #include "bsp.h"
 #include "delay.h"
+#include <math.h>
 
 // Static functions
 static void SystemClock_Config(void);
@@ -27,62 +28,52 @@ static void SystemClock_Config(void);
 uint16_t	TIM6_counter;
 uint16_t	TIM6_UIF;
 
-// Main function
-// Main function
-// Main function
-// Main function
-// Main function
+
 // Main function
 int main()
 {
-	uint16_t pulse_A, pulse_B;
-	uint8_t	 state;
+	float 		angle, y;
+	uint16_t 	output;
 
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize Timer for delays
-	BSP_DELAY_TIM_init();
+	// Initialize LED pin
+	BSP_LED_Init();
 
-	// Initialize Timer for PWM output
-	BSP_TIMER_PWM_Init();
+	// Initialize DAC output
+	BSP_DAC_Init();
 
-	// Initialize state variables
-	state 	= 0;
-	pulse_A = 1500;
-	pulse_B = 1500;
+	// Initialize 200µs time base
+	BSP_TIMER_Timebase_Init();
+
+	// Initialize variables
+	angle = 0.0f;
 
 	while(1)
 	{
-		// Set PWMs duty ratios according to pulse_A and pulse_B values
-		TIM1->CCR1 = pulse_A;
-		TIM1->CCR2 = pulse_B;
-		// Manage state machine
-		switch (state)
-		{
-			// Increasing A, Decreasing B
-			case 0 :
-			{
-				pulse_A++;
-				pulse_B--;
-				// Stop condition -> State 1
-				if (pulse_A == 2000) state = 1;
-				break;
-			}
+		// Start measure
+		BSP_LED_On();
 
-			// Increasing B, Decreasing A
-			case 1 :
-			{
-				pulse_A--;
-				pulse_B++;
-				// Stop condition -> State 0
-				if (pulse_B == 2000) state = 0;
-				break;
-			}
-		}
+		// Increment angle value modulo 2*PI
+		angle = angle + 0.01f;
+		if (angle > 6.28f) angle = 0.0f;
 
-		// Wait for 2 ms
-		BSP_DELAY_TIM_ms(2);
+		// Compute sinus(angle)
+		y = sinf(angle);
+
+		// Offset and Scale output to DAC unsigned 12-bit
+		output = (uint16_t)(0x07FF + (int16_t)(0x07FF * y));
+
+		// End measure
+		BSP_LED_Off();
+
+		// Set DAC output
+		DAC->DHR12R1 = output;
+
+		// Wait for update event (one sample every 200µs)
+		while ((TIM6->SR & TIM_SR_UIF) == 0);
+		TIM6->SR &= ~TIM_SR_UIF;
 	}
 }
 /*
