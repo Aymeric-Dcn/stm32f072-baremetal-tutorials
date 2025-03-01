@@ -31,28 +31,58 @@ uint16_t	TIM6_UIF;
 // Main function
 // Main function
 // Main function
+// Main function
+// Main function
 int main()
 {
+	uint16_t pulse_A, pulse_B;
+	uint8_t	 state;
+
 	// Configure System Clock
 	SystemClock_Config();
-
-	// Initialize Console
-	BSP_Console_Init();
-	my_printf("Console Ready!\r\n");
 
 	// Initialize Timer for delays
 	BSP_DELAY_TIM_init();
 
-	// Initialize Timer for Input Capture
-	BSP_TIMER_IC_Init();
+	// Initialize Timer for PWM output
+	BSP_TIMER_PWM_Init();
+
+	// Initialize state variables
+	state 	= 0;
+	pulse_A = 1500;
+	pulse_B = 1500;
 
 	while(1)
 	{
-	  // Report TIM3 status (CNT, CCR1 and CCR2 registers)
-	  my_printf("CNT->%05d Start->%05d length->%05d\r", TIM3->CNT, TIM3->CCR1, TIM3->CCR2 );
+		// Set PWMs duty ratios according to pulse_A and pulse_B values
+		TIM1->CCR1 = pulse_A;
+		TIM1->CCR2 = pulse_B;
+		// Manage state machine
+		switch (state)
+		{
+			// Increasing A, Decreasing B
+			case 0 :
+			{
+				pulse_A++;
+				pulse_B--;
+				// Stop condition -> State 1
+				if (pulse_A == 2000) state = 1;
+				break;
+			}
 
-	  // Wait for 100ms
-	  BSP_DELAY_TIM_ms(100);
+			// Increasing B, Decreasing A
+			case 1 :
+			{
+				pulse_A--;
+				pulse_B++;
+				// Stop condition -> State 0
+				if (pulse_B == 2000) state = 0;
+				break;
+			}
+		}
+
+		// Wait for 2 ms
+		BSP_DELAY_TIM_ms(2);
 	}
 }
 /*

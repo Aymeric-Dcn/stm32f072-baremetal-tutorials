@@ -50,4 +50,9 @@ void BSP_TIMER_IC_Init		(void);
 void BSP_DELAY_TIM_init		(void);
 void BSP_DELAY_TIM_ms		(uint16_t ms);
 
+/*
+ * PWM Timer
+ */
+void BSP_TIMER_PWM_Init		(void);
+
 #endif /* INC_BSP_H_ */
