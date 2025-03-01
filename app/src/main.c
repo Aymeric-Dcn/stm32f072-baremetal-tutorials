@@ -13,34 +13,30 @@
 // Static functions
 static void SystemClock_Config (void);
 
-// Main function
+// Global variable
+uint16_t	ADC_result;
+
+#include "stm32f0xx.h"
+#include "bsp.h"
+#include "delay.h"
+
+// Static functions
+static void SystemClock_Config(void);
+
 // Main function
 int main()
 {
-	uint32_t	i;
-
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize Debug Console
-	BSP_Console_Init();
-	my_printf("Console ready!\r\n");
-
-	// Initialize and start ADC on PC1
-	BSP_ADC_Init();
-	my_printf("ADC ready!\r\n");
+	// Initialize LED pin
+	BSP_LED_Init();
 
 	// Main loop
 	while(1)
 	{
-		// Wait here until ADC EOC
-		while ((ADC1->ISR & ADC_ISR_EOC) != ADC_ISR_EOC);
-
-		// Report result to console
-		my_printf("ADC value = %d\r\n", ADC1->DR);
-
-		// Wait about 200ms
-		for (i=0; i<500000; i++);
+		BSP_LED_Toggle();
+		BSP_DELAY_ms(500);
 	}
 }
 /*
