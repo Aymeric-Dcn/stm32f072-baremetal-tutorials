@@ -28,24 +28,31 @@ uint16_t	TIM6_counter;
 uint16_t	TIM6_UIF;
 
 // Main function
+// Main function
+// Main function
+// Main function
 int main()
 {
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize LED pin
-	BSP_LED_Init();
+	// Initialize Console
+	BSP_Console_Init();
+	my_printf("Console Ready!\r\n");
 
 	// Initialize Timer for delays
 	BSP_DELAY_TIM_init();
 
+	// Initialize Timer for Input Capture
+	BSP_TIMER_IC_Init();
+
 	while(1)
 	{
-		// Toggle LED
-		BSP_LED_Toggle();
+	  // Report TIM3 status (CNT, CCR1 and CCR2 registers)
+	  my_printf("CNT->%05d Start->%05d length->%05d\r", TIM3->CNT, TIM3->CCR1, TIM3->CCR2 );
 
-		// Wait for 200ms
-		BSP_DELAY_TIM_ms(200);
+	  // Wait for 100ms
+	  BSP_DELAY_TIM_ms(100);
 	}
 }
 /*

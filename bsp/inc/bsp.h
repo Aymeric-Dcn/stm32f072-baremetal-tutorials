@@ -42,7 +42,7 @@ void BSP_ADC_Init		(void);
  * Timer functions
  */
 void BSP_TIMER_Timebase_Init	(void);
-
+void BSP_TIMER_IC_Init		(void);
 /*
  * Timer delays
  */
