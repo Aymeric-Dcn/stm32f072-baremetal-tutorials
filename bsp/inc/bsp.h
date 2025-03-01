@@ -38,4 +38,16 @@ void	BSP_Console_Init	(void);
  */
 void BSP_ADC_Init		(void);
 
+/*
+ * Timer functions
+ */
+void BSP_TIMER_Timebase_Init	(void);
+
+/*
+ * Timer delays
+ */
+
+void BSP_DELAY_TIM_init		(void);
+void BSP_DELAY_TIM_ms		(uint16_t ms);
+
 #endif /* INC_BSP_H_ */

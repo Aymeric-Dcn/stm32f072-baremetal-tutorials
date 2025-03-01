@@ -23,6 +23,10 @@ uint16_t	ADC_result;
 // Static functions
 static void SystemClock_Config(void);
 
+// Global variables
+uint16_t	TIM6_counter;
+uint16_t	TIM6_UIF;
+
 // Main function
 int main()
 {
@@ -32,11 +36,16 @@ int main()
 	// Initialize LED pin
 	BSP_LED_Init();
 
-	// Main loop
+	// Initialize Timer for delays
+	BSP_DELAY_TIM_init();
+
 	while(1)
 	{
+		// Toggle LED
 		BSP_LED_Toggle();
-		BSP_DELAY_ms(500);
+
+		// Wait for 200ms
+		BSP_DELAY_TIM_ms(200);
 	}
 }
 /*
