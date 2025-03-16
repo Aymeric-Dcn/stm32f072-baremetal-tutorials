@@ -27,6 +27,7 @@ static void SystemClock_Config(void);
 // Global variables
 uint16_t	TIM6_counter;
 uint16_t	TIM6_UIF;
+uint8_t	button_irq = 0;
 
 
 // Main function
@@ -50,11 +51,18 @@ void main()
 
 	// Main loop
 	while(1)
-	{
-		// Some important stuff to do
-		my_printf(".");
-		BSP_DELAY_TIM_ms(200);
-	}
+		{
+			// Process button request if needed
+			while(button_irq > 0)
+			{
+				my_printf("#");
+				button_irq--;
+			}
+
+			// Some important stuff to do
+			my_printf(".");
+			BSP_DELAY_TIM_ms(200);
+		}
 }
 /*
  * Clock configuration for the Nucleo STM32F072RB board

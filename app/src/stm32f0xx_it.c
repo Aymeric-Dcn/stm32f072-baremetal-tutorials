@@ -131,17 +131,17 @@ void SysTick_Handler(void)
   * This function handles EXTI line 13 interrupt request.
   */
 
+extern uint8_t button_irq;
+
 void EXTI4_15_IRQHandler()
 {
 	// Test for line 13 pending interrupt
 	if ((EXTI->PR & EXTI_PR_PR13_Msk) != 0)
 	{
 		// Clear pending bit 13 by writing a '1'
-                // Do not use OR masking here
 		EXTI->PR = EXTI_PR_PR13;
 
 		// Do what you need
-		my_printf("#");
+		button_irq++;
 	}
-
 }
