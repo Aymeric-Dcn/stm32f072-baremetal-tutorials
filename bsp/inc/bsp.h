@@ -60,4 +60,9 @@ void BSP_TIMER_PWM_Init		(void);
  */
 void BSP_DAC_Init		(void);
 
+/*
+ * NVIC initialization
+ */
+void BSP_NVIC_Init				(void);
+
 #endif /* INC_BSP_H_ */

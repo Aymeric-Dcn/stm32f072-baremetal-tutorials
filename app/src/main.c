@@ -30,7 +30,7 @@ uint16_t	TIM6_UIF;
 
 
 // Main function
-int main()
+void main()
 {
 	// Configure System Clock
 	SystemClock_Config();
@@ -45,40 +45,16 @@ int main()
 	// Initialize Timer Delay
 	BSP_DELAY_TIM_init();
 
-	// Initialize Button State
-		char button_state = 0;
+	// Initialize NVIC
+	BSP_NVIC_Init();
 
-		// Main loop
-		while(1)
-		{
-	    	switch (button_state)
-	    	{
-	    		case 0:		// Button is currently released
-	    		{
-	    			// If pressed
-	    			if (BSP_PB_GetState() == 1)
-	    			{
-	    				my_printf ("#");
-	    				button_state = 1;
-	    			}
-	    			break;
-	    		}
-
-	    		case 1:		// Button is currently pressed
-	    		{
-	    			// If released
-	    			if (BSP_PB_GetState() == 0)
-	    			{
-	    				button_state = 0;
-	    			}
-	    			break;
-	    		}
-	    	}
-
-			// Some important stuff to do
-			my_printf(".");
-			BSP_DELAY_TIM_ms(200);
-		}
+	// Main loop
+	while(1)
+	{
+		// Some important stuff to do
+		my_printf(".");
+		BSP_DELAY_TIM_ms(200);
+	}
 }
 /*
  * Clock configuration for the Nucleo STM32F072RB board
