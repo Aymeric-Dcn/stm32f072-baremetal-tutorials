@@ -32,49 +32,53 @@ uint16_t	TIM6_UIF;
 // Main function
 int main()
 {
-	float 		angle, y;
-	uint16_t 	output;
-
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize LED pin
-	BSP_LED_Init();
+	// Initialize Button pin
+	BSP_PB_Init();
 
-	// Initialize DAC output
-	BSP_DAC_Init();
+	// Initialize Console
+	BSP_Console_Init();
+	my_printf("Console Ready!\r\n");
 
-	// Initialize 200µs time base
-	BSP_TIMER_Timebase_Init();
+	// Initialize Timer Delay
+	BSP_DELAY_TIM_init();
 
-	// Initialize variables
-	angle = 0.0f;
+	// Initialize Button State
+		char button_state = 0;
 
-	while(1)
-	{
-		// Start measure
-		BSP_LED_On();
+		// Main loop
+		while(1)
+		{
+	    	switch (button_state)
+	    	{
+	    		case 0:		// Button is currently released
+	    		{
+	    			// If pressed
+	    			if (BSP_PB_GetState() == 1)
+	    			{
+	    				my_printf ("#");
+	    				button_state = 1;
+	    			}
+	    			break;
+	    		}
 
-		// Increment angle value modulo 2*PI
-		angle = angle + 0.01f;
-		if (angle > 6.28f) angle = 0.0f;
+	    		case 1:		// Button is currently pressed
+	    		{
+	    			// If released
+	    			if (BSP_PB_GetState() == 0)
+	    			{
+	    				button_state = 0;
+	    			}
+	    			break;
+	    		}
+	    	}
 
-		// Compute sinus(angle)
-		y = sinf(angle);
-
-		// Offset and Scale output to DAC unsigned 12-bit
-		output = (uint16_t)(0x07FF + (int16_t)(0x07FF * y));
-
-		// End measure
-		BSP_LED_Off();
-
-		// Set DAC output
-		DAC->DHR12R1 = output;
-
-		// Wait for update event (one sample every 200µs)
-		while ((TIM6->SR & TIM_SR_UIF) == 0);
-		TIM6->SR &= ~TIM_SR_UIF;
-	}
+			// Some important stuff to do
+			my_printf(".");
+			BSP_DELAY_TIM_ms(200);
+		}
 }
 /*
  * Clock configuration for the Nucleo STM32F072RB board
