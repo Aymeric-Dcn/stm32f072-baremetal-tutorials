@@ -25,13 +25,15 @@ uint16_t	ADC_result;
 static void SystemClock_Config(void);
 
 // Global variables
-uint16_t	TIM6_counter;
-uint16_t	TIM6_UIF;
+
+//uint16_t	TIM6_counter;
+//uint16_t	TIM6_UIF;
 uint8_t	button_irq = 0;
+uint8_t 	timebase_irq = 0;
 
 
 // Main function
-void main()
+int main()
 {
 	// Configure System Clock
 	SystemClock_Config();
@@ -43,26 +45,29 @@ void main()
 	BSP_Console_Init();
 	my_printf("Console Ready!\r\n");
 
-	// Initialize Timer Delay
-	BSP_DELAY_TIM_init();
+	// Initialize timebase
+	BSP_TIMER_Timebase_Init();
 
 	// Initialize NVIC
 	BSP_NVIC_Init();
 
 	// Main loop
 	while(1)
+	{
+		// Process button upon interrupt
+		if (button_irq == 1)
 		{
-			// Process button request if needed
-			while(button_irq > 0)
-			{
-				my_printf("#");
-				button_irq--;
-			}
-
-			// Some important stuff to do
-			my_printf(".");
-			BSP_DELAY_TIM_ms(200);
+			my_printf("#");
+			button_irq = 0;
 		}
+
+		// Process main task upon timebase interrupt
+		if (timebase_irq == 1)
+		{
+			my_printf(".");
+			timebase_irq = 0;
+		}
+	}
 }
 /*
  * Clock configuration for the Nucleo STM32F072RB board

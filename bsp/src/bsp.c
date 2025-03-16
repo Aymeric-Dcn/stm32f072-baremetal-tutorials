@@ -215,42 +215,23 @@ void BSP_ADC_Init()
 	ADC1->CR |= ADC_CR_ADSTART;
 }
 
+
+
+
+
+
 /*
  * BSP_TIMER_Timebase_Init()
  * TIM6 at 48MHz
  * Prescaler   = 48000 -> Counting period = 1ms
- * Auto-reload = 1000  -> Update period   = 1s
+ * Auto-reload = 200   -> Update period   = 200ms
+ */
 
-
-void BSP_TIMER_Timebase_Init()
-{
-	// Enable TIM6 clock
-	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
-
-	// Reset TIM6 configuration
-	TIM6->CR1 = 0x0000;
-	TIM6->CR2 = 0x0000;
-
-	// Set TIM6 prescaler
-	// Fck = 48MHz -> /48000 = 1KHz counting frequency
-	TIM6->PSC = (uint16_t) 48000 -1;
-
-	// Set TIM6 auto-reload register for 1s
-	TIM6->ARR = (uint16_t) 1000 -1;
-
-	// Enable auto-reload preload
-	TIM6->CR1 |= TIM_CR1_ARPE;
-
-	// Start TIM6 counter
-	TIM6->CR1 |= TIM_CR1_CEN;
-}*/
-
-
-
-/*BSP_TIMER_Timebase_Init()
+/*
+ * BSP_TIMER_Timebase_Init()
  * TIM6 at 48MHz
- * Prescaler   = 48 -> Counting period = 1µs
- * Auto-reload = 200  -> Update period   = 200µs
+ * Prescaler   = 48000 -> Counting period = 1ms
+ * Auto-reload = 200   -> Update period   = 200ms
  */
 
 void BSP_TIMER_Timebase_Init()
@@ -263,14 +244,17 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR2 = 0x0000;
 
 	// Set TIM6 prescaler
-	// Fck = 48MHz -> /48 = 1MHz counting frequency
-	TIM6->PSC = (uint16_t) 48 -1;
+	// Fck = 48MHz -> /48000 = 1kHz counting frequency
+	TIM6->PSC = (uint16_t) 48000 -1;
 
-	// Set TIM6 auto-reload register for 200µs period
+	// Set TIM6 auto-reload register for 200ms
 	TIM6->ARR = (uint16_t) 200 -1;
 
 	// Enable auto-reload preload
 	TIM6->CR1 |= TIM_CR1_ARPE;
+
+	// Enable Interrupt upon Update Event
+	TIM6->DIER |= TIM_DIER_UIE;
 
 	// Start TIM6 counter
 	TIM6->CR1 |= TIM_CR1_CEN;
@@ -445,10 +429,13 @@ void BSP_DAC_Init()
 	DAC->CR |= DAC_CR_EN1;
 }
 
+
+
 /*
  * BSP_NVIC_Init()
  * Setup NVIC controller for desired interrupts
  */
+
 void BSP_NVIC_Init()
 {
 	// Set maximum priority for EXTI line 4 to 15 interrupts
@@ -456,6 +443,12 @@ void BSP_NVIC_Init()
 
 	// Enable EXTI line 4 to 15 (user button on line 13) interrupts
 	NVIC_EnableIRQ(EXTI4_15_IRQn);
+
+	// Set priority level 1 for TIM6 interrupt
+	NVIC_SetPriority(TIM6_DAC_IRQn, 1);
+
+	// Enable TIM6 interrupts
+	NVIC_EnableIRQ(TIM6_DAC_IRQn);
 }
 
 

@@ -145,3 +145,22 @@ void EXTI4_15_IRQHandler()
 		button_irq++;
 	}
 }
+
+/*
+ * This function handles TIM6 interrupts
+ */
+
+extern uint8_t timebase_irq;
+
+void TIM6_DAC_IRQHandler()
+{
+	// Test for TIM6 update pending interrupt
+	if ((TIM6->SR & TIM_SR_UIF) == TIM_SR_UIF)
+	{
+		// Clear pending interrupt flag
+		TIM6->SR &= ~TIM_SR_UIF;
+
+		// Do what you need
+		timebase_irq = 1;
+	}
+}
