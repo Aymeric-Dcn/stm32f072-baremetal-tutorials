@@ -65,3 +65,5 @@ void BSP_DELAY_TIM_ms(uint16_t ms)
 	// Stop TIM6 counter
 	TIM6->CR1 &= ~TIM_CR1_CEN;
 }
+
+

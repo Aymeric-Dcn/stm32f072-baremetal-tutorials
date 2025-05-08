@@ -65,4 +65,18 @@ void BSP_DAC_Init		(void);
  */
 void BSP_NVIC_Init				(void);
 
+/*
+ * I2C initialization
+ */
+
+void BSP_I2C1_Init		(void);
+
+void BSP_DBG_Pins_Init	(void);
+/*
+ * READ I2C
+ */
+uint8_t	BSP_I2C1_Read	( uint8_t device_address,
+                       uint8_t register_address,
+                       uint8_t *buffer,
+                       uint8_t nbytes );
 #endif /* INC_BSP_H_ */

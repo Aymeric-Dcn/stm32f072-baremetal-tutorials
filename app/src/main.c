@@ -12,9 +12,13 @@
 
 // Static functions
 static void SystemClock_Config (void);
+static uint8_t wait_for_flags  (void);
 
 // Global variable
 uint16_t	ADC_result;
+uint8_t	button_irq = 0;
+uint8_t 	timebase_irq = 0;
+uint16_t rx_data = 0;
 
 #include "stm32f0xx.h"
 #include "bsp.h"
@@ -24,51 +28,41 @@ uint16_t	ADC_result;
 // Static functions
 static void SystemClock_Config(void);
 
-// Global variables
-
-//uint16_t	TIM6_counter;
-//uint16_t	TIM6_UIF;
-uint8_t	button_irq = 0;
-uint8_t 	timebase_irq = 0;
 
 
 // Main function
-int main()
+int main(void)
 {
-	// Configure System Clock
+	uint8_t		rx_data[2];
+
+	// Configure System Clock for 48MHz from 8MHz HSE
 	SystemClock_Config();
 
-	// Initialize Button pin
+	// Initialize LED and USER Button
+	BSP_LED_Init();
 	BSP_PB_Init();
 
-	// Initialize Console
+	// Initialize Debug Console
 	BSP_Console_Init();
-	my_printf("Console Ready!\r\n");
+	my_printf("\r\nConsole Ready!\r\n");
+	my_printf("SYSCLK = %d Hz\r\n", SystemCoreClock);
 
-	// Initialize timebase
-	BSP_TIMER_Timebase_Init();
+	// Initialize I2C1 peripheral
+	BSP_I2C1_Init();
 
-	// Initialize NVIC
-	BSP_NVIC_Init();
+	// Read 2 bytes in VEML7700 register @0x00
+	BSP_I2C1_Read(0x10, 0x00, rx_data, 2);
 
-	// Main loop
+	my_printf( "Current VEML7700 configuration = 0x%04x\r\n",
+                   (uint16_t)(rx_data[1] <<8U | rx_data[0]) );
+
 	while(1)
 	{
-		// Process button upon interrupt
-		if (button_irq == 1)
-		{
-			my_printf("#");
-			button_irq = 0;
-		}
-
-		// Process main task upon timebase interrupt
-		if (timebase_irq == 1)
-		{
-			my_printf(".");
-			timebase_irq = 0;
-		}
 	}
 }
+
+
+
 /*
  * Clock configuration for the Nucleo STM32F072RB board
  * HSE input Bypass Mode            -> 8MHz
@@ -139,4 +133,49 @@ static void SystemClock_Config()
 
 	// Update SystemCoreClock global variable
 	SystemCoreClockUpdate();
+}
+
+/*
+ * Wait for & Report I2C status flags
+ */
+
+static uint8_t wait_for_flags()
+{
+	uint8_t	exit = 0;
+
+	while(exit == 0)
+	{
+		// TXIS -> PA0
+		// Exit when set
+		if ((I2C1->ISR & I2C_ISR_TXIS) != 0)
+		{
+			GPIOA->BSRR = GPIO_BSRR_BS_0;
+			exit = 1;
+		}
+		else GPIOA->BSRR = GPIO_BSRR_BR_0;
+
+
+        // RXNE -> PA1
+        // Exit when set
+        if ((I2C1->ISR & I2C_ISR_RXNE) != 0)
+        {
+            GPIOA->BSRR = GPIO_BSRR_BS_1;
+            exit = 2;
+        }
+        else GPIOA->BSRR = GPIO_BSRR_BR_1;
+
+        // TC -> PA1
+        // Exit when set
+        if ((I2C1->ISR & I2C_ISR_TC) != 0)
+        {
+            GPIOA->BSRR = GPIO_BSRR_BS_1;
+            exit = 3;
+        }
+        else GPIOA->BSRR = GPIO_BSRR_BR_1;
+
+
+        // Add more flag test here
+		// ...
+	}
+	return exit;
 }
