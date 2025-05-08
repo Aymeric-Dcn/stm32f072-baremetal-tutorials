@@ -12,7 +12,7 @@
 
 // Static functions
 static void SystemClock_Config (void);
-static uint8_t wait_for_flags  (void);
+//static uint8_t wait_for_flags  (void);
 
 // Global variable
 uint16_t	ADC_result;
@@ -34,6 +34,8 @@ static void SystemClock_Config(void);
 int main(void)
 {
 	uint8_t		rx_data[2];
+	uint8_t		tx_data[0];
+	uint16_t	ials;
 
 	// Configure System Clock for 48MHz from 8MHz HSE
 	SystemClock_Config();
@@ -50,49 +52,23 @@ int main(void)
 	// Initialize I2C1 peripheral
 	BSP_I2C1_Init();
 
-	// Read 2 bytes in VEML7700 register @0x00
+	// VEML7700 power ON -> register @0x00
+	tx_data[1] = 0x00; tx_data[0] = 0x00;
+	BSP_I2C1_Write(0x10, 0x00, tx_data, 2);
+
+	// Read VEML7700 Current configuration -> register @0x00
 	BSP_I2C1_Read(0x10, 0x00, rx_data, 2);
-
-	// Set device address
-	I2C1->CR2 &= ~I2C_CR2_SADD_Msk;
-	I2C1->CR2 |= ((0x10 <<1U) <<I2C_CR2_SADD_Pos);
-
-	// Set I2C in Write mode
-	I2C1->CR2 &= ~I2C_CR2_RD_WRN;
-
-	// Transfer NBYTES = 3, no AUTOEND
-	I2C1->CR2 &= ~I2C_CR2_NBYTES;
-	I2C1->CR2 |= (3 <<16U);
-	I2C1->CR2 &= ~I2C_CR2_AUTOEND;
-
-	// Start I2C transaction
-	I2C1->CR2 |= I2C_CR2_START;
-
-	wait_for_flags();          // TXIS #1
-
-	// Send Register address
- 	I2C1->TXDR = 0x00;
-
-	wait_for_flags();          // TXIS #2
-
-	// Send first byte (LSB)
-	I2C1->TXDR = 0x00;
-
-	wait_for_flags();          // TXIS #3
-
-	// Send second byte (MSB)
-	I2C1->TXDR = 0x00;
-
-	wait_for_flags();          // TC
-
-	// Generate STOP condition
-	I2C1->CR2 |= I2C_CR2_STOP;
+	my_printf("VEML7700 Config = 0x%04x\r\n",(rx_data[1]<<8U | rx_data[0]));
 
 	while(1)
 	{
-	}
-	while(1)
-	{
+		// Read VEML7700 ALS (Ambient Light Sensor) -> register @0x04
+		BSP_I2C1_Read(0x10, 0x04, rx_data, 2);
+
+		ials = (rx_data[1]<<8U) | rx_data[0];
+		my_printf("Ambient Light = %d\r\n", ials);
+
+		BSP_DELAY_ms(200);
 	}
 }
 
@@ -174,41 +150,41 @@ static void SystemClock_Config()
  * Wait for & Report I2C status flags
  */
 
-static uint8_t wait_for_flags()
-{
-	uint8_t	exit = 0;
-	// Clear STOPF and NACKF flags
-	I2C1->ICR |= I2C_ICR_STOPCF;
-	I2C1->ICR |= I2C_ICR_NACKCF;
-
-	while(exit == 0)
-	{
-		// TXIS -> PA0
-		// Exit when set
-		if ((I2C1->ISR & I2C_ISR_TXIS) != 0)
-		{
-			GPIOA->BSRR = GPIO_BSRR_BS_0;
-			exit = 1;
-		}
-		else GPIOA->BSRR = GPIO_BSRR_BR_0;
-
-		// TC -> PA4
-		// Exit when set
-		if ((I2C1->ISR & I2C_ISR_TC) != 0)
-		{
-			GPIOA->BSRR = GPIO_BSRR_BS_4;
-			exit = 3;
-		}
-		else GPIOA->BSRR = GPIO_BSRR_BR_4;
-
-		// STOPF -> PC1
-		// Exit when set
-		if ((I2C1->ISR & I2C_ISR_STOPF) != 0)
-		{
-			GPIOC->BSRR = GPIO_BSRR_BS_1;
-			exit = 5;
-		}
-		else GPIOC->BSRR = GPIO_BSRR_BR_1;
-	}
-	return exit;
-}
+//static uint8_t wait_for_flags()
+//{
+//	uint8_t	exit = 0;
+//	// Clear STOPF and NACKF flags
+//	I2C1->ICR |= I2C_ICR_STOPCF;
+//	I2C1->ICR |= I2C_ICR_NACKCF;
+//
+//	while(exit == 0)
+//	{
+//		// TXIS -> PA0
+//		// Exit when set
+//		if ((I2C1->ISR & I2C_ISR_TXIS) != 0)
+//		{
+//			GPIOA->BSRR = GPIO_BSRR_BS_0;
+//			exit = 1;
+//		}
+//		else GPIOA->BSRR = GPIO_BSRR_BR_0;
+//
+//		// TC -> PA4
+//		// Exit when set
+//		if ((I2C1->ISR & I2C_ISR_TC) != 0)
+//		{
+//			GPIOA->BSRR = GPIO_BSRR_BS_4;
+//			exit = 3;
+//		}
+//		else GPIOA->BSRR = GPIO_BSRR_BR_4;
+//
+//		// STOPF -> PC1
+//		// Exit when set
+//		if ((I2C1->ISR & I2C_ISR_STOPF) != 0)
+//		{
+//			GPIOC->BSRR = GPIO_BSRR_BS_1;
+//			exit = 5;
+//		}
+//		else GPIOC->BSRR = GPIO_BSRR_BR_1;
+//	}
+//	return exit;
+//}
