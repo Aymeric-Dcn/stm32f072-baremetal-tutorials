@@ -79,4 +79,11 @@ uint8_t	BSP_I2C1_Read	( uint8_t device_address,
                        uint8_t register_address,
                        uint8_t *buffer,
                        uint8_t nbytes );
+/*
+ * WRITE I2C
+ */
+
+uint8_t	BSP_I2C1_Write	( uint8_t device_address,
+                        uint8_t register_address,
+                        uint8_t *buffer, uint8_t nbytes );
 #endif /* INC_BSP_H_ */

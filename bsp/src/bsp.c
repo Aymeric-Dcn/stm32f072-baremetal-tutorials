@@ -503,6 +503,11 @@ void BSP_DBG_Pins_Init()
 {
 	//Enable clock on GPIOA
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+
+	//Enable clock on GPIOC
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+
+
 	//Configure PA0 as output mode
 	GPIOA->MODER &= ~(GPIO_MODER_MODER0_Msk);
 	GPIOA->MODER |= 0x01 << GPIO_MODER_MODER0_Pos;
@@ -510,11 +515,17 @@ void BSP_DBG_Pins_Init()
 	GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_0);
 
 
-	//Configure PA1 as output mode
-	GPIOA->MODER &= ~(GPIO_MODER_MODER1_Msk);
-	GPIOA->MODER |= 0x01 << GPIO_MODER_MODER1_Pos;
-	//Configure PA1 as a push-pull output
-	GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_1);
+	//Configure PA4 as output mode
+	GPIOA->MODER &= ~(GPIO_MODER_MODER4_Msk);
+	GPIOA->MODER |= 0x01 << GPIO_MODER_MODER4_Pos;
+	//Configure PA4 as a push-pull output
+	GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_4);
+
+	//Configure PC1 as output mode
+	GPIOC->MODER &= ~(GPIO_MODER_MODER1_Msk);
+	GPIOC->MODER |= 0x01 << GPIO_MODER_MODER1_Pos;
+	//Configure PA4 as a push-pull output
+	GPIOC->OTYPER &= ~(GPIO_OTYPER_OT_1);
 
 }
 
@@ -597,6 +608,71 @@ uint8_t	BSP_I2C1_Read( uint8_t device_address,
 	{
 		timeout--;
 		if (timeout == 0) return 4;
+	}
+
+	// Return success
+	return 0;
+}
+
+uint8_t	BSP_I2C1_Write( uint8_t device_address,
+                        uint8_t register_address,
+                        uint8_t *buffer, uint8_t nbytes )
+{
+	uint32_t 	timeout;	// Flag waiting timeout
+	uint8_t		n;			// Loop counter
+
+	// Set device address
+	I2C1->CR2 &= ~I2C_CR2_SADD_Msk;
+	I2C1->CR2 |= ((device_address <<1U) <<I2C_CR2_SADD_Pos);
+
+	// Set I2C in Write mode
+	I2C1->CR2 &= ~I2C_CR2_RD_WRN;
+
+	// Transfer NBYTES, with AUTOEND
+	I2C1->CR2 &= ~I2C_CR2_NBYTES;
+	I2C1->CR2 |= ((nbytes+1) <<16U);
+	I2C1->CR2 |= I2C_CR2_AUTOEND;
+
+	// Clear STOPF flag
+	I2C1->ICR |= I2C_ICR_STOPCF;
+
+	// Start I2C transaction
+	I2C1->CR2 |= I2C_CR2_START;
+
+	// Wait for TXIS with timeout
+	timeout = 100000;
+	while (((I2C1->ISR) & I2C_ISR_TXIS) != I2C_ISR_TXIS)
+	{
+		timeout--;
+		if (timeout == 0) return 1;
+	}
+
+	// Send register address
+	I2C1->TXDR = register_address;
+
+	n = nbytes;
+	while(n>0)
+	{
+		// Wait for TXIS with timeout
+		timeout = 100000;
+		while (((I2C1->ISR) & I2C_ISR_TXIS) != I2C_ISR_TXIS)
+		{
+			timeout--;
+			if (timeout == 0) return 2;
+		}
+
+		// Send data
+		I2C1->TXDR = *buffer;
+		buffer++;
+		n--;
+	}
+
+	// Wait for STOPF with timeout
+	timeout = 100000;
+	while (((I2C1->ISR) & I2C_ISR_STOPF) != I2C_ISR_STOPF)
+	{
+		timeout--;
+		if (timeout == 0) return 3;
 	}
 
 	// Return success

@@ -53,9 +53,44 @@ int main(void)
 	// Read 2 bytes in VEML7700 register @0x00
 	BSP_I2C1_Read(0x10, 0x00, rx_data, 2);
 
-	my_printf( "Current VEML7700 configuration = 0x%04x\r\n",
-                   (uint16_t)(rx_data[1] <<8U | rx_data[0]) );
+	// Set device address
+	I2C1->CR2 &= ~I2C_CR2_SADD_Msk;
+	I2C1->CR2 |= ((0x10 <<1U) <<I2C_CR2_SADD_Pos);
 
+	// Set I2C in Write mode
+	I2C1->CR2 &= ~I2C_CR2_RD_WRN;
+
+	// Transfer NBYTES = 3, no AUTOEND
+	I2C1->CR2 &= ~I2C_CR2_NBYTES;
+	I2C1->CR2 |= (3 <<16U);
+	I2C1->CR2 &= ~I2C_CR2_AUTOEND;
+
+	// Start I2C transaction
+	I2C1->CR2 |= I2C_CR2_START;
+
+	wait_for_flags();          // TXIS #1
+
+	// Send Register address
+ 	I2C1->TXDR = 0x00;
+
+	wait_for_flags();          // TXIS #2
+
+	// Send first byte (LSB)
+	I2C1->TXDR = 0x00;
+
+	wait_for_flags();          // TXIS #3
+
+	// Send second byte (MSB)
+	I2C1->TXDR = 0x00;
+
+	wait_for_flags();          // TC
+
+	// Generate STOP condition
+	I2C1->CR2 |= I2C_CR2_STOP;
+
+	while(1)
+	{
+	}
 	while(1)
 	{
 	}
@@ -142,6 +177,9 @@ static void SystemClock_Config()
 static uint8_t wait_for_flags()
 {
 	uint8_t	exit = 0;
+	// Clear STOPF and NACKF flags
+	I2C1->ICR |= I2C_ICR_STOPCF;
+	I2C1->ICR |= I2C_ICR_NACKCF;
 
 	while(exit == 0)
 	{
@@ -154,28 +192,23 @@ static uint8_t wait_for_flags()
 		}
 		else GPIOA->BSRR = GPIO_BSRR_BR_0;
 
+		// TC -> PA4
+		// Exit when set
+		if ((I2C1->ISR & I2C_ISR_TC) != 0)
+		{
+			GPIOA->BSRR = GPIO_BSRR_BS_4;
+			exit = 3;
+		}
+		else GPIOA->BSRR = GPIO_BSRR_BR_4;
 
-        // RXNE -> PA1
-        // Exit when set
-        if ((I2C1->ISR & I2C_ISR_RXNE) != 0)
-        {
-            GPIOA->BSRR = GPIO_BSRR_BS_1;
-            exit = 2;
-        }
-        else GPIOA->BSRR = GPIO_BSRR_BR_1;
-
-        // TC -> PA1
-        // Exit when set
-        if ((I2C1->ISR & I2C_ISR_TC) != 0)
-        {
-            GPIOA->BSRR = GPIO_BSRR_BS_1;
-            exit = 3;
-        }
-        else GPIOA->BSRR = GPIO_BSRR_BR_1;
-
-
-        // Add more flag test here
-		// ...
+		// STOPF -> PC1
+		// Exit when set
+		if ((I2C1->ISR & I2C_ISR_STOPF) != 0)
+		{
+			GPIOC->BSRR = GPIO_BSRR_BS_1;
+			exit = 5;
+		}
+		else GPIOC->BSRR = GPIO_BSRR_BR_1;
 	}
 	return exit;
 }
