@@ -12,6 +12,7 @@
 #include "delay.h"
 #include <math.h>
 #include "sinewave_table.h"
+#include "rtc.h"
 
 // Static functions
 static void SystemClock_Config (void);
@@ -28,22 +29,38 @@ uint8_t	  	 rx_dma_buffer[8];
 uint8_t rx_dma_irq = 0;
 uint16_t	adc_dma_buffer[3];
 
-// Main function
+// Main program
 int main()
 {
+	time_t		now;
+
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize 60kHz timebase
-	BSP_TIMER_Timebase_Init();
+	// Configure RTC Clock
+	BSP_RTC_Clock_Config();
 
-	// Initialize DAC
-	BSP_DAC_Init();
+	// Set RTC time
+	now.hours   = 12;
+	now.minutes = 00;
+	now.seconds = 00;
+	BSP_RTC_SetTime(&now);
+
+	// Console init
+	BSP_Console_Init();
+	my_printf("\r\nConsole Ready!\r\n");
+
+	// LED init
+	BSP_LED_Init();
 
 	// Main loop
 	while(1)
 	{
-		// Do nothing...
+	   BSP_RTC_GetTime(&now);
+       my_printf("RTC Time is %02d:%02d:%02d\r", now.hours, now.minutes, now.seconds);
+
+	   BSP_LED_Toggle();
+	   BSP_DELAY_ms(100);
 	}
 }
 
@@ -118,6 +135,25 @@ static void SystemClock_Config()
 		SW_Status = (RCC->CFGR & RCC_CFGR_SWS_Msk);
 		timeout--;
 	} while ((SW_Status != RCC_CFGR_SWS_PLL) && (timeout > 0));
+
+	/*--- Use PA8 as LSE output ---*/
+	// Set MCO source as LSE
+	RCC->CFGR &= ~RCC_CFGR_MCO_Msk;
+	RCC->CFGR |=  RCC_CFGR_MCOSEL_LSE;     // Change here
+
+	// No prescaler
+	RCC->CFGR &= ~RCC_CFGR_MCOPRE_Msk;
+
+	// Enable GPIOA clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+
+	// Configure PA8 as Alternate function
+	GPIOA->MODER &= ~GPIO_MODER_MODER8_Msk;
+	GPIOA->MODER |= (0x02 <<GPIO_MODER_MODER8_Pos);
+
+	// Set to AF0 (MCO output)
+	GPIOA->AFR[1] &= ~(0x0000000F);
+	GPIOA->AFR[1] |=  (0x00000000);
 
 	// Update SystemCoreClock global variable
 	SystemCoreClockUpdate();

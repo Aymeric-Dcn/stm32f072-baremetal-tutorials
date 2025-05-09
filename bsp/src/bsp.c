@@ -306,7 +306,7 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR1 |= TIM_CR1_ARPE;
 
 	// Enable Interrupt upon Update Event
-	// TIM6->DIER |= TIM_DIER_UIE;
+	TIM6->DIER |= TIM_DIER_UIE;
 
 	// Enable TRGO on update event
 	TIM6->CR2 |= (0x02 <<TIM_CR2_MMS_Pos);
@@ -540,11 +540,11 @@ void BSP_NVIC_Init()
 	// Enable TIM6 interrupts
 	NVIC_EnableIRQ(TIM6_DAC_IRQn);
 
-//	// Set priority level 1 for USART2 interrupt
-//	NVIC_SetPriority(USART2_IRQn, 1);
-//
-//	// Enable USART2 interrupts
-//	NVIC_EnableIRQ(USART2_IRQn);
+	// Set priority level 1 for USART2 interrupt
+	NVIC_SetPriority(USART2_IRQn, 1);
+
+	// Enable USART2 interrupts
+	NVIC_EnableIRQ(USART2_IRQn);
 
 	// Set priority level 1 for DMA1_Channel5 interrupts
 	NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 1);
