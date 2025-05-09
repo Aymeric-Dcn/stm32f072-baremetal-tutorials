@@ -134,9 +134,9 @@ void BSP_Console_Init()
 
 	// Configure PA2 and PA3 as Alternate function
 	GPIOA->MODER &= ~(GPIO_MODER_MODER2_Msk | GPIO_MODER_MODER3_Msk);
-	GPIOA->MODER |= (0x02 <<GPIO_MODER_MODER2_Pos | 0x02 <<GPIO_MODER_MODER3_Pos);
+	GPIOA->MODER |=  (0x02 <<GPIO_MODER_MODER2_Pos) | (0x02 <<GPIO_MODER_MODER3_Pos);
 
-	// Set PA2 and PA3 to AF1 (USRT2)
+	// Set PA2 and PA3 to AF1 (USART2)
 	GPIOA->AFR[0] &= ~(0x0000FF00);
 	GPIOA->AFR[0] |=  (0x00001100);
 
@@ -155,10 +155,11 @@ void BSP_Console_Init()
 
 	// Baud Rate = 115200
 	// With OVER8=0 and Fck=48MHz, USARTDIV =   48E6/115200 = 416.6666
-	// BRR = 417 -> Baud Rate = 115107.9137 -> 0.08% error
+	// BRR = 417 -> Actual BaudRate = 115107.9137 -> 0.08% error
 	//
 	// With OVER8=1 and Fck=48MHz, USARTDIV = 2*48E6/115200 = 833.3333
-	// BRR = 833 -> Baud Rate = 115246.0984 -> 0.04% error (better)
+	// BRR = 833 -> Actual BaudRate = 115246.0984 -> 0.04% error (better choice)
+
 	USART2->CR1 |= USART_CR1_OVER8;
 	USART2->BRR = 833;
 
@@ -167,7 +168,6 @@ void BSP_Console_Init()
 
 	// Enable interrupt on RXNE event
 	USART2->CR1 |= USART_CR1_RXNEIE;
-
 
 	// Enable USART2
 	USART2->CR1 |= USART_CR1_UE;
@@ -224,12 +224,6 @@ void BSP_ADC_Init()
 
 
 
-/*
- * BSP_TIMER_Timebase_Init()
- * TIM6 at 48MHz
- * Prescaler   = 48000 -> Counting period = 1ms
- * Auto-reload = 200   -> Update period   = 200ms
- */
 
 /*
  * BSP_TIMER_Timebase_Init()
@@ -247,12 +241,11 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR1 = 0x0000;
 	TIM6->CR2 = 0x0000;
 
-	// Set TIM6 prescaler
 	// Fck = 48MHz -> /48000 = 1kHz counting frequency
 	TIM6->PSC = (uint16_t) 48000 -1;
 
-	// Set TIM6 auto-reload register for 200ms
-	TIM6->ARR = (uint16_t) 200 -1;
+	// Set TIM6 auto-reload register for 1s
+	TIM6->ARR = (uint16_t) 1000 -1;
 
 	// Enable auto-reload preload
 	TIM6->CR1 |= TIM_CR1_ARPE;

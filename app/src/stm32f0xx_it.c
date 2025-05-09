@@ -169,7 +169,7 @@ void TIM6_DAC_IRQHandler()
  * This function handles USART2 interrupts
  */
 
-extern uint8_t	console_rx_byte;
+extern uint8_t	console_rx_byte[10];
 extern uint8_t	console_rx_irq;
 
 void USART2_IRQHandler()
@@ -180,7 +180,7 @@ void USART2_IRQHandler()
 		// RXNE flags automatically clears when reading RDR.
 
 		// Store incoming byte
-		console_rx_byte = USART2->RDR;
-		console_rx_irq = 1;
+		console_rx_byte[console_rx_irq] = USART2->RDR;
+		console_rx_irq++;
 	}
 }
