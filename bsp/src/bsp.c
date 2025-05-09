@@ -196,18 +196,23 @@ void BSP_Console_Init()
 
 /*
  * ADC_Init()
- * Initialize ADC for a single channel conversion
- * on channel 11 -> pin PC1
+ * Initialize ADC for 3 channels conversion with DMA
+ * - Channel 11 -> pin PC1
+ * - Channel 12 -> pin PC2
+ * - Channel 13 -> pin PC3
  */
+
+extern uint16_t	adc_dma_buffer[3];
 
 void BSP_ADC_Init()
 {
 	// Enable GPIOC clock
 	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
 
-	// Configure pin PC1 as analog
-	GPIOC->MODER &= ~GPIO_MODER_MODER1_Msk;
-	GPIOC->MODER |= (0x03 <<GPIO_MODER_MODER1_Pos);
+	// Configure pin PC1, PC2, PC3 as analog
+	GPIOC->MODER &= ~(GPIO_MODER_MODER1_Msk | GPIO_MODER_MODER2_Msk | GPIO_MODER_MODER3_Msk);
+
+	GPIOC->MODER |=	(0x03 <<GPIO_MODER_MODER1_Pos) | (0x03 <<GPIO_MODER_MODER2_Pos) | (0x03 <<GPIO_MODER_MODER3_Pos);
 
 	// Enable ADC clock
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
@@ -230,8 +235,37 @@ void BSP_ADC_Init()
 	// Set sampling time to 28.5 ADC clock cycles
 	ADC1->SMPR = 0x03;
 
-	// Select channel 11
-	ADC1->CHSELR |= ADC_CHSELR_CHSEL11;
+	// Select channel 11, 12, 13
+	ADC1->CHSELR |= ADC_CHSELR_CHSEL11 | ADC_CHSELR_CHSEL12 | ADC_CHSELR_CHSEL13;
+
+	// Start DMA clock
+	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+
+	// Reset DMA1 Channel 1 configuration
+	DMA1_Channel1->CCR = 0x00000000;
+
+	// Configure DMA1 Channel 1
+	// Peripheral -> Memory
+	// Peripheral is 16-bit, no increment
+	// Memory is 16-bit, increment
+	// Circular mode
+
+	DMA1_Channel1->CCR |= (0x01 <<DMA_CCR_PSIZE_Pos) | (0x01 <<DMA_CCR_MSIZE_Pos) | DMA_CCR_MINC | DMA_CCR_CIRC;
+
+	// Peripheral is ADC1 DR
+	DMA1_Channel1->CPAR = (uint32_t)&ADC1->DR;
+
+	// Memory is adc_dma_buffer
+	DMA1_Channel1->CMAR = (uint32_t)adc_dma_buffer;
+
+	// Set Memory Buffer size
+	DMA1_Channel1->CNDTR = 3;
+
+	// Enable DMA1 Channel 1
+	DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+	// Enable ADC DMA Request in circular mode
+	ADC1->CFGR1 |= ADC_CFGR1_DMACFG | ADC_CFGR1_DMAEN;
 
 	// Enable ADC
 	ADC1->CR |= ADC_CR_ADEN;
@@ -250,7 +284,7 @@ void BSP_ADC_Init()
  * BSP_TIMER_Timebase_Init()
  * TIM6 at 48MHz
  * Prescaler   = 48000 -> Counting period = 1ms
- * Auto-reload = 200   -> Update period   = 200ms
+ * Auto-reload = 100   -> Update period   = 100ms
  */
 
 void BSP_TIMER_Timebase_Init()
@@ -263,11 +297,11 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR2 = 0x0000;
 
 	// Set TIM6 prescaler
-	// Fck = 48MHz -> /48000 = 1kHz counting frequency
+	// Fck = 48MHz -> /48000 = 1KHz counting frequency
 	TIM6->PSC = (uint16_t) 48000 -1;
 
-	// Set TIM6 auto-reload register for 200ms
-	TIM6->ARR = (uint16_t) 1000 -1;
+	// Set TIM6 auto-reload register for 100ms
+	TIM6->ARR = (uint16_t) 100 -1;
 
 	// Enable auto-reload preload
 	TIM6->CR1 |= TIM_CR1_ARPE;

@@ -40,11 +40,9 @@ void BSP_DELAY_TIM_init(void)
 	TIM6->CR2 = 0x0000;
 
 	// Set TIM6 prescaler
-	// Fck = 48MHz -> /48000 = 1kHz counting frequency
+	// Fck = 48MHz -> /48000 = 1KHz counting frequency
 	TIM6->PSC = (uint16_t) 48000 -1;
 
-	// Set TIM6 auto-reload register for 1s
-	//TIM6->ARR = (uint16_t) 1000 -1;
 	// Set ARR to maximum value
 	TIM6->ARR = (uint16_t) 0xFFFF;
 }
