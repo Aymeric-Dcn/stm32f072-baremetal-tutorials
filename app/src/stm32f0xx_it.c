@@ -208,3 +208,25 @@ void DMA1_Channel4_5_6_7_IRQHandler()
 		rx_dma_irq = 2;
 	}
 }
+
+/*
+ * This function handles RTC interrupts
+ */
+
+extern uint8_t	rtc_irq;
+
+void RTC_IRQHandler()
+{
+	// Test for RTC Alarm A
+	if ((RTC->ISR & RTC_ISR_ALRAF) == RTC_ISR_ALRAF)
+	{
+		// Clear the interrupt pending bit
+		RTC->ISR &= ~RTC_ISR_ALRAF;
+
+		// Clear EXTI pending bit also
+		EXTI->PR = EXTI_PR_PR17;
+
+		// Set global flag
+		rtc_irq = 1;
+	}
+}

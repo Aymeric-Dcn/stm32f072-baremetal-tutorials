@@ -19,9 +19,13 @@ typedef struct
 } time_t;
 
 // Public functions
-void BSP_RTC_Clock_Config   (void);
-void BSP_RTC_SetTime        (time_t *ptime);
-void BSP_RTC_GetTime        (time_t *ptime);
+void BSP_RTC_Clock_Config	(void);
+void BSP_RTC_EXTI_Init		(void);
 
+void BSP_RTC_SetTime		(time_t *ptime);
+void BSP_RTC_GetTime		(time_t *ptime);
+
+void BSP_RTC_SetAlarmA		(time_t *ptime);
+void BSP_RTC_GetAlarmA		(time_t *ptime);
 
 #endif /* INC_RTC_H_ */

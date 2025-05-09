@@ -551,6 +551,12 @@ void BSP_NVIC_Init()
 
 	// Enable DMA1_Channel5 interrupts
 	NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);
+
+	// Set priority level 1 for RTC interrupt
+	NVIC_SetPriority(RTC_IRQn, 1);
+
+	// Enable RTC interrupts
+	NVIC_EnableIRQ(RTC_IRQn);
 }
 
 

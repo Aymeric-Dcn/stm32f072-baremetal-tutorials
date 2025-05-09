@@ -126,3 +126,64 @@ static uint8_t bcd2byte(uint8_t bcd)
   return (tmp + (bcd & (uint8_t)0x0F));
 }
 
+
+/*
+ * BSP_RTC_EXTI_Init()
+ * Enable RTC (EXTI17) rising edge Interrupt
+ */
+
+void BSP_RTC_EXTI_Init()
+{
+	// Enable EXTI line 17
+	EXTI->IMR |= EXTI_IMR_IM17;
+
+	// Enable Rising / Disable Falling trigger
+	EXTI->RTSR |=  EXTI_RTSR_RT17;
+	EXTI->FTSR &= ~EXTI_FTSR_FT17;
+}
+
+/*
+ * BSP_RTC_SetAlarmA(time_t *ptime)
+ */
+
+void BSP_RTC_SetAlarmA(time_t *ptime)
+{
+	uint32_t	bcdtime;
+
+	bcdtime = 	( (byte2bcd(ptime->hours))   <<16U) |
+			( (byte2bcd(ptime->minutes)) <<8U)  |
+			( (byte2bcd(ptime->seconds)) <<0U);
+
+	// Enable Write access for RTC registers
+	RTC->WPR = 0xCA;
+	RTC->WPR = 0x53;
+
+	// Disable Alarm A
+	RTC->CR &= ~RTC_CR_ALRAE;
+
+	// Set Alarm time and discard date matching
+	RTC->ALRMAR = RTC_ALRMAR_MSK4 | bcdtime;
+
+	// Enable Alarm A and associated interrupt
+	RTC->CR |= RTC_CR_ALRAE | RTC_CR_ALRAIE;
+
+	// Disable Write access for RTC registers
+	RTC->WPR = 0xFE;
+	RTC->WPR = 0x64;
+}
+
+/*
+ * BSP_RTC_GetAlarmA(time_t *ptime)
+ */
+
+void BSP_RTC_GetAlarmA(time_t *ptime)
+{
+  ptime->hours   = bcd2byte((RTC->ALRMAR & (RTC_ALRMAR_HT_Msk  |
+                             RTC_ALRMAR_HU_Msk )) >>RTC_ALRMAR_HU_Pos);
+
+  ptime->minutes = bcd2byte((RTC->ALRMAR & (RTC_ALRMAR_MNT_Msk |
+                             RTC_ALRMAR_MNU_Msk)) >>RTC_ALRMAR_MNU_Pos);
+
+  ptime->seconds = bcd2byte((RTC->ALRMAR & (RTC_ALRMAR_ST_Msk  |
+                             RTC_ALRMAR_SU_Msk )) >>RTC_ALRMAR_SU_Pos);
+}

@@ -28,11 +28,12 @@ uint8_t	     console_rx_irq = 0;
 uint8_t	  	 rx_dma_buffer[8];
 uint8_t rx_dma_irq = 0;
 uint16_t	adc_dma_buffer[3];
+uint8_t rtc_irq = 0;
 
-// Main program
+// Main function
 int main()
 {
-	time_t		now;
+	time_t		now, alarm;
 	uint32_t	count;
 
 	// Configure System Clock
@@ -42,9 +43,14 @@ int main()
 	BSP_LED_Init();
 	BSP_Console_Init();
 
+	// This delay is just for JP6 debounce (optional)
+	BSP_DELAY_ms(100);
+
 	my_printf("\r\n\n --- Program Starting Over ---\r\n");
 
-	// If this is a Power ON reset
+        /* Test reset conditions */
+
+	// If this is a Power ON Reset (POR)
 	if ( (RCC->CSR & RCC_CSR_PORRSTF_Msk) == RCC_CSR_PORRSTF )
 	{
 		my_printf("This is a Power ON reset\r\n");
@@ -52,42 +58,100 @@ int main()
 		// Setup RTC clock
 		BSP_RTC_Clock_Config();
 
-		// Setup RTC time to 12:00:00
+		// Setup RTC time
 		now.hours   = 12;
 		now.minutes = 00;
 		now.seconds = 00;
 		BSP_RTC_SetTime(&now);
 
-		my_printf("RTC time has been reset to 12:00:00\r\n");
+                my_printf("RTC time has been set to %02d:%02d:%02d\r\n",
+                           now.hours, now.minutes, now.seconds);
+
+		// Setup Alarm A
+		alarm.hours   = 12;
+		alarm.minutes = 00;
+		alarm.seconds = 20;
+		BSP_RTC_SetAlarmA(&alarm);
+
+                my_printf("ALARM A has been set to %02d:%02d:%02d\r\n",
+                alarm.hours, alarm.minutes, alarm.seconds);
 	}
 
-	// If reset pin was held low
-	if ( (RCC->CSR & RCC_CSR_PINRSTF_Msk) == RCC_CSR_PINRSTF )
+	// If reset pin was held low (and no POR detected)
+	else if ( (RCC->CSR & RCC_CSR_PINRSTF_Msk) == RCC_CSR_PINRSTF )
 	{
 		my_printf("Reset pin was low\r\n");
 		my_printf("RTC continues...\r\n");
 	}
 
-	// Use Backup registers to count reset events
+	// Clear reset flags for next reset
+	RCC->CSR |= RCC_CSR_RMVF;
+
+
+	/* Use Backup Registers to hold reset count */
+
+	// (re)enable backup domain register access (after a reset)
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	PWR->CR |= PWR_CR_DBP;
+
+	// Read and update reset count
 	count = RTC->BKP0R;
 	my_printf("Reset #%d\r\n", count);
 	count++;
 	RTC->BKP0R = count;
 
 
-	// Clear reset flags for next reset
-	RCC->CSR |= RCC_CSR_RMVF;
+	/* Test Alarm status */
+
+	// If the Alarm interruption flag is set
+	if ((RTC->ISR & RTC_ISR_ALRAF) == RTC_ISR_ALRAF)
+	{
+		my_printf("An Alarm occurred during reset\r\n");
+	}
+
+	// If the Alarm is armed
+	if ((RTC->CR & RTC_CR_ALRAE) == RTC_CR_ALRAE)
+	{
+		my_printf("Alarm A armed");
+
+		// Print Alarm time
+		BSP_RTC_GetAlarmA(&alarm);
+		my_printf(" -> %02d:%02d:%02d\r\n", alarm.hours,
+                            alarm.minutes, alarm.seconds);
+
+		// (re)enable Alarm Interrupt (after a reset)
+		BSP_RTC_EXTI_Init();
+	}
+
+	// Otherwise...
+	else
+	{
+		my_printf("Alarm A disarmed\r\n");
+	}
+
+
+	// Enable Interrupts
+	BSP_NVIC_Init();
+
 
 	// Main loop
 	while(1)
 	{
-	   BSP_RTC_GetTime(&now);
-	   my_printf("RTC Time is %02d:%02d:%02d\r", now.hours, now.minutes, now.seconds);
+		// Test for Alarm A interruption
+		if (rtc_irq == 1)
+		{
+			my_printf("\r\n *** ALARM *** \r\n");
+			rtc_irq = 0;
+		}
 
-	   BSP_LED_Toggle();
-	   BSP_DELAY_ms(100);
+		// Dispay RTC current time
+		BSP_RTC_GetTime(&now);
+		my_printf("RTC Time is %02d:%02d:%02d\r", now.hours,
+                           now.minutes, now.seconds);
+
+		// Delay before looping
+		BSP_LED_Toggle();
+		BSP_DELAY_ms(100);
 	}
 }
 
