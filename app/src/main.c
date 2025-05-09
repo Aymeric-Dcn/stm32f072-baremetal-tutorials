@@ -33,8 +33,6 @@ static void SystemClock_Config(void);
 // Main function
 int main(void)
 {
-	uint8_t lps25h_id;
-
 	// Configure System Clock for 48MHz from 8MHz HSE
 	SystemClock_Config();
 
@@ -56,16 +54,14 @@ int main(void)
 	// Select slave (CS -> low)
 	GPIOC->BSRR = GPIO_BSRR_BR_7;
 
-	// Send WHO_AM_I register address with READ bit
-	BSP_SPI_SendReceive(0x0F | 0x80);
+	// Send register address to write to
+	BSP_SPI_SendReceive(0x20);
 
-	// Send whatever to generate 8 clock cycles and get the response from slave
-	lps25h_id = BSP_SPI_SendReceive(0x00);
+	// Send data to write (turn LPS25H on)
+	BSP_SPI_SendReceive(0x80);
 
 	// Release slave (CS -> High)
 	GPIOC->BSRR = GPIO_BSRR_BS_7;
-
-	my_printf("LPS25H Device ID = 0x%02x\r\n", lps25h_id);
 
 	while(1)
 	{
