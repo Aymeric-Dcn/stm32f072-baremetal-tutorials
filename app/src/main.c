@@ -29,18 +29,41 @@ uint8_t	  	 rx_dma_buffer[8];
 // Main function
 int main()
 {
+	uint8_t		DMA_Counter;
+	uint8_t		index;
 	// Configure System Clock
 	SystemClock_Config();
 	// Initialize Console
 	BSP_Console_Init();
 	my_printf("Console Ready!\r\n");
+	// Initialize 1s timebase
+	BSP_TIMER_Timebase_Init();
+	BSP_NVIC_Init();
+	// Initialize variables
+	DMA_Counter = DMA1_Channel5->CNDTR;
+	index = DMA_Counter;
 	// Main loop
 	while(1)
 	{
-		// Do nothing...
+		// Do every 1s
+		if(timebase_irq == 1)
+		{
+			// Get actual DMA counter value
+			DMA_Counter = DMA1_Channel5->CNDTR;
+			// For all new received bytes
+			while (index != DMA_Counter)
+			{
+				// Send byte to console
+				while ( (USART2->ISR & USART_ISR_TC) != USART_ISR_TC);
+				USART2->TDR = rx_dma_buffer[8-index];
+				// Circular index update
+				index--;
+				if (index == 0) index = 8;
+			}
+			timebase_irq = 0;
+		}
 	}
 }
-
 
 
 

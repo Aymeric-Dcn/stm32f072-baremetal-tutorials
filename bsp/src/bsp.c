@@ -259,10 +259,11 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR1 = 0x0000;
 	TIM6->CR2 = 0x0000;
 
+	// Set TIM6 prescaler
 	// Fck = 48MHz -> /48000 = 1kHz counting frequency
 	TIM6->PSC = (uint16_t) 48000 -1;
 
-	// Set TIM6 auto-reload register for 1s
+	// Set TIM6 auto-reload register for 200ms
 	TIM6->ARR = (uint16_t) 1000 -1;
 
 	// Enable auto-reload preload
@@ -274,6 +275,7 @@ void BSP_TIMER_Timebase_Init()
 	// Start TIM6 counter
 	TIM6->CR1 |= TIM_CR1_CEN;
 }
+
 /*
  * BSP_TIMER_IC_Init()
  * TIM3 as Input Capture
