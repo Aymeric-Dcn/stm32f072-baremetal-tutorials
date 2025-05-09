@@ -33,6 +33,7 @@ uint16_t	adc_dma_buffer[3];
 int main()
 {
 	time_t		now;
+	uint32_t	count;
 
 	// Configure System Clock
 	SystemClock_Config();
@@ -66,6 +67,15 @@ int main()
 		my_printf("Reset pin was low\r\n");
 		my_printf("RTC continues...\r\n");
 	}
+
+	// Use Backup registers to count reset events
+	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+	PWR->CR |= PWR_CR_DBP;
+	count = RTC->BKP0R;
+	my_printf("Reset #%d\r\n", count);
+	count++;
+	RTC->BKP0R = count;
+
 
 	// Clear reset flags for next reset
 	RCC->CSR |= RCC_CSR_RMVF;
