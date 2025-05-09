@@ -678,3 +678,92 @@ uint8_t	BSP_I2C1_Write( uint8_t device_address,
 	// Return success
 	return 0;
 }
+
+/*
+ * BSP_SPI1_Init()
+ * Initialize SPI1 peripheral @375kHz
+ */
+
+void BSP_SPI1_Init()
+{
+	// SPI_SCK  -> PB3 (AF0)
+	// SPI_MISO -> PB4 (AF0)
+	// SPI_MOSI -> PB5 (AF0)
+	// CS pin	-> PC7 (GPIO)
+
+	// Configure PC7 as CS pin
+
+	// Enable GPIOC clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+
+	// Configure PC7 as output
+	GPIOC->MODER &= ~GPIO_MODER_MODER7_Msk;
+	GPIOC->MODER |= (0x01 <<GPIO_MODER_MODER7_Pos);
+
+	// Configure PC7 as Push-Pull output
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_7;
+
+	// Configure PC7 as High-Speed Output
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR7_Msk;
+	GPIOC->OSPEEDR |= (0x03 <<GPIO_OSPEEDR_OSPEEDR7_Pos);
+
+	// Disable PC7 Pull-up/Pull-down
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR7_Msk;
+
+	// Idle state is high
+	GPIOC->BSRR = GPIO_BSRR_BS_7;
+
+	// Configure PB3, PB5, PB5 as SPI1 pins (AF0)
+
+	// Enable GPIOB clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+
+	// Configure PB3, PB4, PB5 as AF mode
+	GPIOB->MODER &= ~(GPIO_MODER_MODER3 | GPIO_MODER_MODER4 | GPIO_MODER_MODER5);
+	GPIOB->MODER |= (0x02 <<6U) |(0x02 <<8U) |(0x02 <<10U);
+
+	// Connect to SPI1 (AF0)
+	GPIOB->AFR[0] &= ~(0x00FFF000);
+	GPIOB->AFR[0] |=  (0x00000000);
+
+	// Enable SPI1 Clock
+	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+	// Configure SPI with default config
+	// 4-wire = full-duplex (MISO/MOSI on separated lines)
+	// 8-bit, no CRC, MSB first
+	// CPHA = 0, CPOL = 0 -> SPI mode 0 (first clock rising edge)
+	SPI1->CR1 = 0x0000;
+	SPI1->CR2 = 0x0000;
+
+	// Set the baudrate to 48MHz /128 = 375kHz (slow, but easy to debug)
+	SPI1->CR1 |= 0x06 <<SPI_CR1_BR_Pos;
+
+	// Set data size to 8-bit
+	SPI1->CR2 |= 0x07 <<SPI_CR2_DS_Pos;
+
+	// Set as master (SSI must be high), with software managed NSS
+	SPI1->CR1 |= SPI_CR1_MSTR | SPI_CR1_SSI | SPI_CR1_SSM;
+
+	// Enable SPI1
+	SPI1->CR1 |= SPI_CR1_SPE;
+}
+
+uint8_t BSP_SPI_SendReceive(uint8_t tx_byte)
+{
+	uint8_t	rx_byte;
+	// Make sure TXE is set before sending data
+	while((SPI1->SR & SPI_SR_TXE_Msk) == 0);
+
+	// Send tx_byte
+	*(__IO uint8_t *)&SPI1->DR = tx_byte;
+
+	// Wait until incoming data has arrived
+	while((SPI1->SR & SPI_SR_RXNE_Msk) == 0);
+
+	// Read data
+	rx_byte = *(__IO uint8_t *)&SPI1->DR;
+
+	return rx_byte;
+}
+

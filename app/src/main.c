@@ -33,9 +33,7 @@ static void SystemClock_Config(void);
 // Main function
 int main(void)
 {
-	uint8_t		rx_data[2];
-	uint8_t		tx_data[0];
-	uint16_t	ials;
+	uint8_t lps25h_id;
 
 	// Configure System Clock for 48MHz from 8MHz HSE
 	SystemClock_Config();
@@ -49,26 +47,28 @@ int main(void)
 	my_printf("\r\nConsole Ready!\r\n");
 	my_printf("SYSCLK = %d Hz\r\n", SystemCoreClock);
 
-	// Initialize I2C1 peripheral
-	BSP_I2C1_Init();
+	// Initialize SPI1
+	BSP_SPI1_Init();
 
-	// VEML7700 power ON -> register @0x00
-	tx_data[1] = 0x00; tx_data[0] = 0x00;
-	BSP_I2C1_Write(0x10, 0x00, tx_data, 2);
+	// Set FIFO threshold to 1-byte
+	SPI1->CR2 |= SPI_CR2_FRXTH;
 
-	// Read VEML7700 Current configuration -> register @0x00
-	BSP_I2C1_Read(0x10, 0x00, rx_data, 2);
-	my_printf("VEML7700 Config = 0x%04x\r\n",(rx_data[1]<<8U | rx_data[0]));
+	// Select slave (CS -> low)
+	GPIOC->BSRR = GPIO_BSRR_BR_7;
+
+	// Send WHO_AM_I register address with READ bit
+	BSP_SPI_SendReceive(0x0F | 0x80);
+
+	// Send whatever to generate 8 clock cycles and get the response from slave
+	lps25h_id = BSP_SPI_SendReceive(0x00);
+
+	// Release slave (CS -> High)
+	GPIOC->BSRR = GPIO_BSRR_BS_7;
+
+	my_printf("LPS25H Device ID = 0x%02x\r\n", lps25h_id);
 
 	while(1)
 	{
-		// Read VEML7700 ALS (Ambient Light Sensor) -> register @0x04
-		BSP_I2C1_Read(0x10, 0x04, rx_data, 2);
-
-		ials = (rx_data[1]<<8U) | rx_data[0];
-		my_printf("Ambient Light = %d\r\n", ials);
-
-		BSP_DELAY_ms(200);
 	}
 }
 

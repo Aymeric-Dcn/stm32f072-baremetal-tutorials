@@ -14,10 +14,10 @@
  * LED driver functions
  */
 
-void	BSP_LED_Init	(void);
-void	BSP_LED_On	(void);
-void	BSP_LED_Off	(void);
-void	BSP_LED_Toggle	(void);
+void	BSP_LED_Init		(void);
+void	BSP_LED_On			(void);
+void	BSP_LED_Off			(void);
+void	BSP_LED_Toggle		(void);
 
 
 /*
@@ -36,13 +36,13 @@ void	BSP_Console_Init	(void);
 /*
  * ADC functions
  */
-void BSP_ADC_Init		(void);
+void BSP_ADC_Init			(void);
 
 /*
  * Timer functions
  */
 void BSP_TIMER_Timebase_Init	(void);
-void BSP_TIMER_IC_Init		(void);
+void BSP_TIMER_IC_Init			(void);
 /*
  * Timer delays
  */
@@ -58,32 +58,41 @@ void BSP_TIMER_PWM_Init		(void);
 /*
  * DAC initialization
  */
-void BSP_DAC_Init		(void);
+void BSP_DAC_Init			(void);
 
 /*
  * NVIC initialization
  */
-void BSP_NVIC_Init				(void);
+void BSP_NVIC_Init			(void);
 
 /*
  * I2C initialization
  */
 
-void BSP_I2C1_Init		(void);
+void BSP_I2C1_Init			(void);
 
-void BSP_DBG_Pins_Init	(void);
+void BSP_DBG_Pins_Init		(void);
 /*
  * READ I2C
  */
-uint8_t	BSP_I2C1_Read	( uint8_t device_address,
-                       	   uint8_t register_address,
-						   uint8_t *buffer,
-						   uint8_t nbytes );
+uint8_t	BSP_I2C1_Read		( uint8_t device_address,
+                       	   	   uint8_t register_address,
+							   uint8_t *buffer,
+							   uint8_t nbytes );
 /*
  * WRITE I2C
  */
 
-uint8_t	BSP_I2C1_Write	( uint8_t device_address,
-							uint8_t register_address,
-							uint8_t *buffer, uint8_t nbytes );
+uint8_t	BSP_I2C1_Write		( uint8_t device_address,
+								uint8_t register_address,
+								uint8_t *buffer, uint8_t nbytes );
+
+/*
+ * SPI functions
+ */
+void BSP_SPI1_Init			(void);
+
+uint8_t BSP_SPI_SendReceive	(uint8_t tx_byte);
+
+
 #endif /* INC_BSP_H_ */
