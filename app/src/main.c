@@ -34,6 +34,10 @@ uint16_t	in, out;
 // Main function
 int main()
 {
+	float c1, c2;	// Filter coefs
+	float x = 0;	// Filter input
+	float y = 0;	// FIlter output
+
 	// Configure System Clock
 	SystemClock_Config();
 
@@ -50,6 +54,11 @@ int main()
 	// Initialize LED pin
 	BSP_LED_Init();
 
+	// Setup filter coefs
+	c1 = 0.11765f;
+	c2 = 0.88235f;
+
+
 	// Main loop
 	while(1)
 	{
@@ -63,8 +72,10 @@ int main()
 			while ( (ADC1->ISR & ADC_ISR_EOC) != ADC_ISR_EOC );
 			in = ADC1->DR;
 
-			// Follower stage
-			out = in;
+			// Filter stage
+			x = (float)in;
+			y = (c1*x) + (c2*y);
+			out = (uint16_t)y;
 
 			// Output signal --> DAC
 			DAC->DHR12R1 = out;
