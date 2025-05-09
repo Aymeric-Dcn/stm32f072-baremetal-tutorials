@@ -31,68 +31,28 @@ static void SystemClock_Config(void);
 
 
 // Main function
-int main(void)
+int main()
 {
-    uint8_t 	lps25h_id;
-    uint8_t	spi_buffer[5];
-    uint32_t	pressure;
-    int16_t	temperature;
+	uint8_t		rx_byte;
 
-    // Configure System Clock for 48MHz from 8MHz HSE
-    SystemClock_Config();
+	// Configure System Clock
+	SystemClock_Config();
 
-    // Initialize LED and USER Button
-    BSP_LED_Init();
-    BSP_PB_Init();
+	// Initialize Console
+	BSP_Console_Init();
+	my_printf("Console Ready!\r\n");
 
-    // Initialize Debug Console
-    BSP_Console_Init();
-    my_printf("\r\nConsole Ready!\r\n");
-    my_printf("SYSCLK = %d Hz\r\n", SystemCoreClock);
-
-    // Initialize SPI1
-    BSP_SPI1_Init();
-
-    // Read LPS25H device ID
-    BSP_LPS25H_Read(0x0F, &lps25h_id, 1);
-    my_printf("LPS25H Device ID = 0x%02x\r\n", lps25h_id);
-
-    // Turn LPS25H device ON
-    BSP_LPS25H_Write(0x20, 0x80);
-
-    // Read back CTRL_REG1 register
-    BSP_LPS25H_Read(0x20, spi_buffer, 1);
-    my_printf("LPS25H CTRL_REG1 = 0x%02x\r\n", spi_buffer[0]);
-
-    // Set averaging to minimum
-    BSP_LPS25H_Write(0x10, 0x00);
-
-    while(1)
-    {
-		// Trigger a one-shot pressure measure
-		BSP_LPS25H_Write(0x21, 0x01);
-
-		// Allow some time for sensor to perform
-		BSP_DELAY_ms(10);
-
-		// Read sensor data
-		// Pressure level in registers 0x2A | 0x29 | 0x28
-		// Temperature    in registers 0x2C | 0x2B
-		BSP_LPS25H_Read(0x28, spi_buffer, 5);
-
-		// Compute pressure
-		pressure = (uint32_t)( (spi_buffer[2] <<16U) +
-                               (spi_buffer[1] << 8U) +
-                               (spi_buffer[0] << 0U));
-
-		my_printf("Pressure = %d hPa\r\n", pressure / 4096);
-
-		// Compute temperature
-		temperature = (int16_t)((spi_buffer[4] <<8U) + (spi_buffer[3] <<0U));
-
-		my_printf("Temperature = %d C\r\n", (uint8_t)(42.5f + ((float)temperature/480.0f)));
-		BSP_DELAY_ms(1000);
-    }
+	// Main loop
+	while(1)
+	{
+		// If there is something in USART RDR register
+		if ( (USART2->ISR & USART_ISR_RXNE) == USART_ISR_RXNE )
+		{
+			// Read and report the content of RDR
+			rx_byte = USART2->RDR;
+			my_printf("You've hit the '%c' key\r\n", rx_byte);
+		}
+	}
 }
 
 
