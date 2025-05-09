@@ -283,8 +283,8 @@ void BSP_ADC_Init()
 /*
  * BSP_TIMER_Timebase_Init()
  * TIM6 at 48MHz
- * Prescaler   = 48000 -> Counting period = 1ms
- * Auto-reload = 100   -> Update period   = 100ms
+ * Prescaler   = 4   -> Counting frequency is 12MHz
+ * Auto-reload = 200 -> Update frequency is 60kHz
  */
 
 void BSP_TIMER_Timebase_Init()
@@ -297,11 +297,11 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR2 = 0x0000;
 
 	// Set TIM6 prescaler
-	// Fck = 48MHz -> /48000 = 1KHz counting frequency
-	TIM6->PSC = (uint16_t) 48000 -1;
+	// Fck = 48MHz -> /4 = 12MHz counting frequency
+	TIM6->PSC = (uint16_t) 4 -1;
 
-	// Set TIM6 auto-reload register for 100ms
-	TIM6->ARR = (uint16_t) 100 -1;
+	// Set TIM6 auto-reload register for 60kHz
+	TIM6->ARR = (uint16_t) 200 -1;
 
 	// Enable auto-reload preload
 	TIM6->CR1 |= TIM_CR1_ARPE;

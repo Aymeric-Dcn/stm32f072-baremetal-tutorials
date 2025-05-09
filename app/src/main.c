@@ -11,7 +11,7 @@
 #include "main.h"
 #include "delay.h"
 #include <math.h>
-
+#include "sinewave_table.h"
 
 // Static functions
 static void SystemClock_Config (void);
@@ -31,6 +31,8 @@ uint16_t	adc_dma_buffer[3];
 // Main function
 int main()
 {
+	uint8_t		index;
+
 	// Configure System Clock
 	SystemClock_Config();
 
@@ -38,28 +40,34 @@ int main()
 	BSP_Console_Init();
 	my_printf("Console Ready!\r\n");
 
-	// Initialize 1s timebase
+	// Initialize 60kHz timebase
 	BSP_TIMER_Timebase_Init();
 	BSP_NVIC_Init();
 
-	// Initialize ADC with DMA
-	BSP_ADC_Init();
+	// Initialize DAC
+	BSP_DAC_Init();
+
+	// Initialize wavetable index
+	index = 0;
 
 	// Main loop
 	while(1)
 	{
-		// Do every 100ms
+		// Do every sampling period
 		if(timebase_irq == 1)
 		{
-			// Print ADC conversion results
-			my_printf("Ch11=%04d | Ch12=%04d | Ch13=%04d\r", adc_dma_buffer[0], adc_dma_buffer[1], adc_dma_buffer[2]);
+		    // Output a new sample
+                    DAC->DHR12R1 = sinewave[index];
 
-			// Reset timebase flag
-			timebase_irq = 0;
+		    // Increment wavetable index
+                    index++;
+		    if (index==60) index = 0;
+
+		    // Reset timebase flag
+		    timebase_irq = 0;
 		}
 	}
 }
-
 
 
 
