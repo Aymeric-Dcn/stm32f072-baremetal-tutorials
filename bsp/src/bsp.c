@@ -127,48 +127,66 @@ uint8_t BSP_PB_GetState()
  * RX -> PA3 (AF1)
  */
 
+extern uint8_t rx_dma_buffer[8];
 void BSP_Console_Init()
 {
 	// Enable GPIOA clock
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-
 	// Configure PA2 and PA3 as Alternate function
 	GPIOA->MODER &= ~(GPIO_MODER_MODER2_Msk | GPIO_MODER_MODER3_Msk);
 	GPIOA->MODER |=  (0x02 <<GPIO_MODER_MODER2_Pos) | (0x02 <<GPIO_MODER_MODER3_Pos);
-
 	// Set PA2 and PA3 to AF1 (USART2)
 	GPIOA->AFR[0] &= ~(0x0000FF00);
 	GPIOA->AFR[0] |=  (0x00001100);
-
 	// Enable USART2 clock
 	RCC -> APB1ENR |= RCC_APB1ENR_USART2EN;
-
 	// Clear USART2 configuration (reset state)
 	// 8-bit, 1 start, 1 stop, CTS/RTS disabled
 	USART2->CR1 = 0x00000000;
 	USART2->CR2 = 0x00000000;
 	USART2->CR3 = 0x00000000;
-
 	// Select PCLK (APB1) as clock source
 	// PCLK -> 48 MHz
 	RCC->CFGR3 &= ~RCC_CFGR3_USART2SW_Msk;
-
 	// Baud Rate = 115200
 	// With OVER8=0 and Fck=48MHz, USARTDIV =   48E6/115200 = 416.6666
 	// BRR = 417 -> Actual BaudRate = 115107.9137 -> 0.08% error
 	//
 	// With OVER8=1 and Fck=48MHz, USARTDIV = 2*48E6/115200 = 833.3333
 	// BRR = 833 -> Actual BaudRate = 115246.0984 -> 0.04% error (better choice)
-
 	USART2->CR1 |= USART_CR1_OVER8;
 	USART2->BRR = 833;
-
 	// Enable both Transmitter and Receiver
 	USART2->CR1 |= USART_CR1_TE | USART_CR1_RE;
-
-	// Enable interrupt on RXNE event
-	USART2->CR1 |= USART_CR1_RXNEIE;
-
+	// Enable interrupt on RXNE event (disabled with DMA)
+	// USART2->CR1 |= USART_CR1_RXNEIE;
+	// Setup RX on DMA Channel 5
+	// Start DMA clock
+	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+	// Reset DMA1 Channel 5 configuration
+	DMA1_Channel5->CCR = 0x00000000;
+	// Set direction Peripheral -> Memory
+	DMA1_Channel5->CCR &= ~DMA_CCR_DIR;
+	// Peripheral is USART2 RDR
+	DMA1_Channel5->CPAR = (uint32_t)&USART2->RDR;
+	// Peripheral data size is 8-bit (byte)
+	DMA1_Channel5->CCR |= (0x00 <<DMA_CCR_PSIZE_Pos);
+	// Disable auto-increment Peripheral address
+	DMA1_Channel5->CCR &= ~DMA_CCR_PINC;
+	// Memory is rx_dma_buffer
+	DMA1_Channel5->CMAR = (uint32_t)rx_dma_buffer;
+	// Memory data size is 8-bit (byte)
+	DMA1_Channel5->CCR |= (0x00 <<DMA_CCR_MSIZE_Pos);
+	// Enable auto-increment Memory address
+	DMA1_Channel5->CCR |= DMA_CCR_MINC;
+	// Set Memory Buffer size
+	DMA1_Channel5->CNDTR = 8;
+	// DMA mode is circular
+	DMA1_Channel5->CCR |= DMA_CCR_CIRC;
+	// Enable DMA1 Channel 5
+	DMA1_Channel5->CCR |= DMA_CCR_EN;
+	// Enable USART2 DMA Request on RX
+	USART2->CR3 |= USART_CR3_DMAR;
 	// Enable USART2
 	USART2->CR1 |= USART_CR1_UE;
 }
@@ -447,11 +465,11 @@ void BSP_NVIC_Init()
 	// Enable TIM6 interrupts
 	NVIC_EnableIRQ(TIM6_DAC_IRQn);
 
-	// Set priority level 1 for USART2 interrupt
-	NVIC_SetPriority(USART2_IRQn, 1);
-
-	// Enable USART2 interrupts
-	NVIC_EnableIRQ(USART2_IRQn);
+//	// Set priority level 1 for USART2 interrupt
+//	NVIC_SetPriority(USART2_IRQn, 1);
+//
+//	// Enable USART2 interrupts
+//	NVIC_EnableIRQ(USART2_IRQn);
 }
 
 

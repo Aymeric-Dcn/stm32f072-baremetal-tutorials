@@ -18,62 +18,26 @@ static void SystemClock_Config (void);
 //static uint8_t wait_for_flags  (void);
 
 // Global variable
-uint16_t	ADC_result;
-uint16_t 	rx_data = 0;
+uint16_t	 ADC_result;
+uint16_t 	 rx_data = 0;
 uint8_t      button_irq = 0;
 uint8_t      timebase_irq = 0;
 uint8_t	     console_rx_byte[10];
 uint8_t	     console_rx_irq = 0;
+uint8_t	  	 rx_dma_buffer[8];
 
 // Main function
 int main()
 {
-	uint8_t *prx_buffer;
-
 	// Configure System Clock
 	SystemClock_Config();
-
-	// Initialize Button pin
-	BSP_PB_Init();
-
 	// Initialize Console
 	BSP_Console_Init();
 	my_printf("Console Ready!\r\n");
-
-	// Initialize timebase
-	BSP_TIMER_Timebase_Init();
-
-	// Initialize NVIC
-	BSP_NVIC_Init();
-
 	// Main loop
 	while(1)
 	{
-		// Process button upon interrupt
-		if (button_irq == 1)
-		{
-			my_printf("#");
-			button_irq = 0;
-		}
-
-		// Set pointer at the beginning of UART RX buffer
-		prx_buffer = console_rx_byte;
-
-		// Process console incoming byte upon interrupt
-		while (console_rx_irq > 0)
-		{
-			my_printf("%c", *prx_buffer);
-			prx_buffer++;
-			console_rx_irq --;
-		}
-
-		// Process main task upon timebase interrupt
-		if (timebase_irq == 1)
-		{
-			my_printf(".");
-			timebase_irq = 0;
-			BSP_DELAY_ms(900);
-		}
+		// Do nothing...
 	}
 }
 
