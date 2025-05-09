@@ -67,6 +67,11 @@ int main()
 	// If reset pin was held low
 	else if ( (RCC->CSR & RCC_CSR_PINRSTF_Msk) == RCC_CSR_PINRSTF )
 	{
+		if ((RCC->CSR & RCC_CSR_IWDGRSTF_Msk) == RCC_CSR_IWDGRSTF )
+		{
+			my_printf("The watchdog did his job!\r\n");
+		}
+
 		my_printf("Reset pin was low\r\n");
 		my_printf("RTC continues...\r\n");
 	}
@@ -74,9 +79,15 @@ int main()
 	// Clear reset flags for next reset
 	RCC->CSR |= RCC_CSR_RMVF;
 
+	// Watchdog setup
+	IWDG->KR = 0x5555;				// Enable write access
+	IWDG->PR = (0x03 <<IWDG_PR_PR_Pos);	// Prescaler /32
+	IWDG->RLR = 1250;				// 1s period
+	IWDG->KR = 0xAAAA;				// Reload Watchdog
+	IWDG->KR = 0xCCCC;				// Enable Watchdog
+
 	// Enable interruptions
 	BSP_NVIC_Init();
-
 
 	// Main loop
 	while(1)
@@ -88,6 +99,8 @@ int main()
 
 		BSP_LED_Toggle();
 		BSP_DELAY_ms(100);
+
+		IWDG->KR = 0xAAAA;		// Reload Watchdog
 	}
 }
 
