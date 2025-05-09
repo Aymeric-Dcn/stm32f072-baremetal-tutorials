@@ -34,9 +34,9 @@ uint16_t	in, out;
 // Main function
 int main()
 {
-	float c1, c2;	// Filter coefs
-	float x = 0;	// Filter input
-	float y = 0;	// FIlter output
+	uint16_t c1, c2;   // Filter coefs
+	uint16_t x = 0;    // Filter input
+	uint32_t y = 0;    // Filter output
 
 	// Configure System Clock
 	SystemClock_Config();
@@ -55,8 +55,9 @@ int main()
 	BSP_LED_Init();
 
 	// Setup filter coefs
-	c1 = 0.11765f;
-	c2 = 0.88235f;
+	c1 = 482;	// 0.11765f *2^12
+	c2 = 3614;	// 0.88235f *2^12
+
 
 
 	// Main loop
@@ -73,9 +74,10 @@ int main()
 			in = ADC1->DR;
 
 			// Filter stage
-			x = (float)in;
+			x = in;
 			y = (c1*x) + (c2*y);
-			out = (uint16_t)y;
+			y = (y >>12U);		// Remove decimal part
+			out = y;
 
 			// Output signal --> DAC
 			DAC->DHR12R1 = out;
