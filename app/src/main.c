@@ -29,78 +29,50 @@ uint8_t	  	 rx_dma_buffer[8];
 uint8_t rx_dma_irq = 0;
 uint16_t	adc_dma_buffer[3];
 uint8_t rtc_irq = 0;
+uint16_t	in, out;
 
 // Main function
 int main()
 {
-	time_t		now;
-
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Peripheral Inits
-	BSP_LED_Init();
-	BSP_Console_Init();
-	BSP_PB_Init();
-
-    // NVIC Init
-    BSP_NVIC_Init();
-	my_printf("\r\n\n --- Program Starting Over ---\r\n");
-
-	// If this is a Power ON reset
-	if ( (RCC->CSR & RCC_CSR_PORRSTF_Msk) == RCC_CSR_PORRSTF )
-	{
-		my_printf("This is a Power ON reset\r\n");
-
-		// Setup RTC clock
-		BSP_RTC_Clock_Config();
-
-		// Setup RTC time to 12:00:00
-		now.hours   = 12;
-		now.minutes = 00;
-		now.seconds = 00;
-		BSP_RTC_SetTime(&now);
-
-		my_printf("RTC time has been reset to 12:00:00\r\n");
-	}
-
-	// If reset pin was held low
-	else if ( (RCC->CSR & RCC_CSR_PINRSTF_Msk) == RCC_CSR_PINRSTF )
-	{
-		if ((RCC->CSR & RCC_CSR_IWDGRSTF_Msk) == RCC_CSR_IWDGRSTF )
-		{
-			my_printf("The watchdog did his job!\r\n");
-		}
-
-		my_printf("Reset pin was low\r\n");
-		my_printf("RTC continues...\r\n");
-	}
-
-	// Clear reset flags for next reset
-	RCC->CSR |= RCC_CSR_RMVF;
-
-	// Watchdog setup
-	IWDG->KR = 0x5555;				// Enable write access
-	IWDG->PR = (0x03 <<IWDG_PR_PR_Pos);	// Prescaler /32
-	IWDG->RLR = 1250;				// 1s period
-	IWDG->KR = 0xAAAA;				// Reload Watchdog
-	IWDG->KR = 0xCCCC;				// Enable Watchdog
-
-	// Enable interruptions
+	// Initialize 10ms timebase
+	BSP_TIMER_Timebase_Init();
 	BSP_NVIC_Init();
+
+	// Initialize ADC
+	BSP_ADC_Init();
+
+	// Initialize DAC
+	BSP_DAC_Init();
+
+	// Initialize LED pin
+	BSP_LED_Init();
 
 	// Main loop
 	while(1)
 	{
-		BSP_RTC_GetTime(&now);
+		// Do every 10ms
+		if (timebase_irq == 1)
+		{
+			// Start measure
+			BSP_LED_On();
 
-		my_printf("RTC Time is %02d:%02d:%02d\r", now.hours,
-                           now.minutes, now.seconds);
+			// Input signal <-- ADC
+			while ( (ADC1->ISR & ADC_ISR_EOC) != ADC_ISR_EOC );
+			in = ADC1->DR;
 
-		BSP_LED_Toggle();
-		BSP_DELAY_ms(100);
+			// Follower stage
+			out = in;
 
-		IWDG->KR = 0xAAAA;		// Reload Watchdog
+			// Output signal --> DAC
+			DAC->DHR12R1 = out;
+
+			// Stop measure
+			BSP_LED_Off();
+			timebase_irq = 0;
+		}
 	}
 }
 

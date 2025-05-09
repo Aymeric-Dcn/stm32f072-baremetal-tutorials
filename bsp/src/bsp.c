@@ -196,23 +196,18 @@ void BSP_Console_Init()
 
 /*
  * ADC_Init()
- * Initialize ADC for 3 channels conversion with DMA
+ * Initialize ADC for single channel conversion
  * - Channel 11 -> pin PC1
- * - Channel 12 -> pin PC2
- * - Channel 13 -> pin PC3
  */
-
-extern uint16_t	adc_dma_buffer[3];
 
 void BSP_ADC_Init()
 {
 	// Enable GPIOC clock
 	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
 
-	// Configure pin PC1, PC2, PC3 as analog
-	GPIOC->MODER &= ~(GPIO_MODER_MODER1_Msk | GPIO_MODER_MODER2_Msk | GPIO_MODER_MODER3_Msk);
-
-	GPIOC->MODER |=	(0x03 <<GPIO_MODER_MODER1_Pos) | (0x03 <<GPIO_MODER_MODER2_Pos) | (0x03 <<GPIO_MODER_MODER3_Pos);
+	// Configure pin PC1 as analog
+	GPIOC->MODER &= ~(GPIO_MODER_MODER1_Msk);
+	GPIOC->MODER |= (0x03 <<GPIO_MODER_MODER1_Pos);
 
 	// Enable ADC clock
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
@@ -223,11 +218,8 @@ void BSP_ADC_Init()
 	ADC1->CFGR2  = 0x00000000;
 	ADC1->CHSELR = 0x00000000;
 
-	// Enable continuous conversion mode
-	ADC1->CFGR1 |= ADC_CFGR1_CONT;
-
-	// 12-bit resolution
-	ADC1->CFGR1 |= (0x00 <<ADC_CFGR1_RES_Pos);
+	// Enable 12-bit continuous conversion mode
+	ADC1->CFGR1 |= (0x00 <<ADC_CFGR1_RES_Pos) | ADC_CFGR1_CONT;
 
 	// Select PCLK/2 as ADC clock
 	ADC1->CFGR2 |= (0x01 <<ADC_CFGR2_CKMODE_Pos);
@@ -235,37 +227,8 @@ void BSP_ADC_Init()
 	// Set sampling time to 28.5 ADC clock cycles
 	ADC1->SMPR = 0x03;
 
-	// Select channel 11, 12, 13
-	ADC1->CHSELR |= ADC_CHSELR_CHSEL11 | ADC_CHSELR_CHSEL12 | ADC_CHSELR_CHSEL13;
-
-	// Start DMA clock
-	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-
-	// Reset DMA1 Channel 1 configuration
-	DMA1_Channel1->CCR = 0x00000000;
-
-	// Configure DMA1 Channel 1
-	// Peripheral -> Memory
-	// Peripheral is 16-bit, no increment
-	// Memory is 16-bit, increment
-	// Circular mode
-
-	DMA1_Channel1->CCR |= (0x01 <<DMA_CCR_PSIZE_Pos) | (0x01 <<DMA_CCR_MSIZE_Pos) | DMA_CCR_MINC | DMA_CCR_CIRC;
-
-	// Peripheral is ADC1 DR
-	DMA1_Channel1->CPAR = (uint32_t)&ADC1->DR;
-
-	// Memory is adc_dma_buffer
-	DMA1_Channel1->CMAR = (uint32_t)adc_dma_buffer;
-
-	// Set Memory Buffer size
-	DMA1_Channel1->CNDTR = 3;
-
-	// Enable DMA1 Channel 1
-	DMA1_Channel1->CCR |= DMA_CCR_EN;
-
-	// Enable ADC DMA Request in circular mode
-	ADC1->CFGR1 |= ADC_CFGR1_DMACFG | ADC_CFGR1_DMAEN;
+	// Select channel 11
+	ADC1->CHSELR |= ADC_CHSELR_CHSEL11;
 
 	// Enable ADC
 	ADC1->CR |= ADC_CR_ADEN;
@@ -283,9 +246,11 @@ void BSP_ADC_Init()
 /*
  * BSP_TIMER_Timebase_Init()
  * TIM6 at 48MHz
- * Prescaler   = 4   -> Counting frequency is 12MHz
- * Auto-reload = 200 -> Update frequency is 60kHz
+ * Prescaler   = 48000  -> Counting frequency is 1kHz
+ * Auto-reload = 10 	-> Update period is 10ms
+ * Enable Update Interrupt
  */
+
 void BSP_TIMER_Timebase_Init()
 {
 	// Enable TIM6 clock
@@ -296,20 +261,17 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR2 = 0x0000;
 
 	// Set TIM6 prescaler
-	// Fck = 48MHz -> /4 = 12MHz counting frequency
-	TIM6->PSC = (uint16_t) 4 -1;
+	// Fck = 48MHz -> /48000 = 1kHz counting frequency
+	TIM6->PSC = (uint16_t) 48000 -1;
 
-	// Set TIM6 auto-reload register for 60kHz
-	TIM6->ARR = (uint16_t) 200 -1;
+	// Set TIM6 auto-reload register for 10ms
+	TIM6->ARR = (uint16_t) 10 -1;
 
 	// Enable auto-reload preload
 	TIM6->CR1 |= TIM_CR1_ARPE;
 
 	// Enable Interrupt upon Update Event
 	TIM6->DIER |= TIM_DIER_UIE;
-
-	// Enable TRGO on update event
-	TIM6->CR2 |= (0x02 <<TIM_CR2_MMS_Pos);
 
 	// Start TIM6 counter
 	TIM6->CR1 |= TIM_CR1_CEN;
@@ -466,8 +428,6 @@ void BSP_TIMER_PWM_Init()
  * on channel 1 -> pin PA4
  */
 
-extern const uint16_t sinewave[60];
-
 void BSP_DAC_Init()
 {
 	// Enable GPIOA clock
@@ -477,43 +437,11 @@ void BSP_DAC_Init()
 	GPIOA->MODER &= ~GPIO_MODER_MODER4_Msk;
 	GPIOA->MODER |= (0x03 <<GPIO_MODER_MODER4_Pos);
 
-	// Enable DMA clock
-	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-
-	// Reset DMA1 Channel 3 (DAC) configuration
-	DMA1_Channel3->CCR = 0x00000000;
-
-	// Configure DMA1 Channel 3
-	// Memory -> Peripheral
-	// Peripheral is 16-bit, no increment
-	// Memory is 16-bit, increment
-	// Circular mode
-
-	DMA1_Channel3->CCR |= (0x01 <<DMA_CCR_PSIZE_Pos) | (0x01 <<DMA_CCR_MSIZE_Pos) | DMA_CCR_MINC | DMA_CCR_CIRC | DMA_CCR_DIR;
-
-	// Peripheral is DAC1 DHR12R1
-	DMA1_Channel3->CPAR = (uint32_t)&DAC1->DHR12R1;
-
-	// Memory is sine wavetable
-	DMA1_Channel3->CMAR = (uint32_t)sinewave;
-
-	// Set Memory Buffer size
-	DMA1_Channel3->CNDTR = 60;
-
-	// Enable DMA1 Channel 3
-	DMA1_Channel3->CCR |= DMA_CCR_EN;
-
 	// Enable DAC clock
 	RCC->APB1ENR |= RCC_APB1ENR_DACEN;
 
 	// Reset DAC configuration
 	DAC->CR = 0x00000000;
-
-	// Enable DAC Channel 1 DMA request
-	DAC->CR |= DAC_CR_DMAEN1;
-
-	// Select and enable TIM6 TRGO event as DAC trigger source
-	DAC->CR |= (0x00 <<DAC_CR_TSEL1_Pos) | DAC_CR_TEN1;
 
 	// Enable Channel 1
 	DAC->CR |= DAC_CR_EN1;
@@ -540,23 +468,23 @@ void BSP_NVIC_Init()
 	// Enable TIM6 interrupts
 	NVIC_EnableIRQ(TIM6_DAC_IRQn);
 
-	// Set priority level 1 for USART2 interrupt
-	NVIC_SetPriority(USART2_IRQn, 1);
-
-	// Enable USART2 interrupts
-	NVIC_EnableIRQ(USART2_IRQn);
-
-	// Set priority level 1 for DMA1_Channel5 interrupts
-	NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 1);
-
-	// Enable DMA1_Channel5 interrupts
-	NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);
-
-	// Set priority level 1 for RTC interrupt
-	NVIC_SetPriority(RTC_IRQn, 1);
-
-	// Enable RTC interrupts
-	NVIC_EnableIRQ(RTC_IRQn);
+//	// Set priority level 1 for USART2 interrupt
+//	NVIC_SetPriority(USART2_IRQn, 1);
+//
+//	// Enable USART2 interrupts
+//	NVIC_EnableIRQ(USART2_IRQn);
+//
+//	// Set priority level 1 for DMA1_Channel5 interrupts
+//	NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 1);
+//
+//	// Enable DMA1_Channel5 interrupts
+//	NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);
+//
+//	// Set priority level 1 for RTC interrupt
+//	NVIC_SetPriority(RTC_IRQn, 1);
+//
+//	// Enable RTC interrupts
+//	NVIC_EnableIRQ(RTC_IRQn);
 }
 
 

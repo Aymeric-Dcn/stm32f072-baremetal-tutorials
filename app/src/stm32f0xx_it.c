@@ -141,9 +141,7 @@ void EXTI4_15_IRQHandler()
 		// Clear pending bit 13 by writing a '1'
 		EXTI->PR = EXTI_PR_PR13;
 
-		// Writing to an non-existing address produces a Hardfault exeption
-		// that will hang the program into an infinite loop
-		*(__IO uint32_t *) 0x00040001 = 0xFF;
+
 
 		button_irq = 1;
 	}
