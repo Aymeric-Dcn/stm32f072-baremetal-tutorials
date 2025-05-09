@@ -94,5 +94,12 @@ void BSP_SPI1_Init			(void);
 
 uint8_t BSP_SPI_SendReceive	(uint8_t tx_byte);
 
+//Function for LPS25H but can work as a general prototype
+void BSP_LPS25H_Read	(uint8_t register_address,
+							uint8_t *buffer,
+							uint8_t nbytes);
+
+void BSP_LPS25H_Write(uint8_t register_address,
+						uint8_t data);
 
 #endif /* INC_BSP_H_ */

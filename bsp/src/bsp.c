@@ -767,3 +767,53 @@ uint8_t BSP_SPI_SendReceive(uint8_t tx_byte)
 	return rx_byte;
 }
 
+void BSP_LPS25H_Read(uint8_t register_address, uint8_t *buffer, uint8_t nbytes)
+{
+	uint8_t		ms_bit_msk;
+	uint8_t		n;
+
+	// Set the M/S bit depending on the number of byte to read
+	if(nbytes > 1) 	ms_bit_msk = 0x40;    // bit-6 mask
+	else		ms_bit_msk = 0x00;
+
+	// Set FIFO threshold to 1-byte
+	SPI1->CR2 |= SPI_CR2_FRXTH;
+
+	// Select slave (CS -> low)
+	GPIOC->BSRR = GPIO_BSRR_BR_7;
+
+	// Send register address to read from
+	BSP_SPI_SendReceive(register_address | 0x80 | ms_bit_msk);
+
+	// Read loop
+	n = nbytes;
+
+	while(n>0)
+	{
+		*buffer = BSP_SPI_SendReceive(0x00);
+		buffer++;
+		n--;
+	}
+
+	// Release slave (CS -> High)
+	GPIOC->BSRR = GPIO_BSRR_BS_7;
+}
+
+void BSP_LPS25H_Write(uint8_t register_address, uint8_t data)
+{
+	// Set FIFO threshold to 1-byte
+	SPI1->CR2 |= SPI_CR2_FRXTH;
+
+	// Select slave (CS -> low)
+	GPIOC->BSRR = GPIO_BSRR_BR_7;
+
+	// Send register address to write to
+	BSP_SPI_SendReceive(register_address);
+
+	// Send data to write
+	BSP_SPI_SendReceive(data);
+
+	// Release slave (CS -> High)
+	GPIOC->BSRR = GPIO_BSRR_BS_7;
+}
+
