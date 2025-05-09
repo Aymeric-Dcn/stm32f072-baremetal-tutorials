@@ -70,7 +70,6 @@ void BSP_LED_Toggle()
 /*
  * BSP_PB_Init()
  * Initialize Push-Button pin (PC13) as input without Pull-up/Pull-down
- * Enable EXTI13 on falling edge
  */
 
 void BSP_PB_Init()
@@ -99,6 +98,7 @@ void BSP_PB_Init()
 	EXTI->RTSR &= ~EXTI_RTSR_RT13;
 	EXTI->FTSR |=  EXTI_FTSR_FT13;
 }
+
 
 /*
  * BSP_PB_GetState()
