@@ -286,7 +286,6 @@ void BSP_ADC_Init()
  * Prescaler   = 4   -> Counting frequency is 12MHz
  * Auto-reload = 200 -> Update frequency is 60kHz
  */
-
 void BSP_TIMER_Timebase_Init()
 {
 	// Enable TIM6 clock
@@ -307,7 +306,10 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR1 |= TIM_CR1_ARPE;
 
 	// Enable Interrupt upon Update Event
-	TIM6->DIER |= TIM_DIER_UIE;
+	// TIM6->DIER |= TIM_DIER_UIE;
+
+	// Enable TRGO on update event
+	TIM6->CR2 |= (0x02 <<TIM_CR2_MMS_Pos);
 
 	// Start TIM6 counter
 	TIM6->CR1 |= TIM_CR1_CEN;
@@ -464,6 +466,8 @@ void BSP_TIMER_PWM_Init()
  * on channel 1 -> pin PA4
  */
 
+extern const uint16_t sinewave[60];
+
 void BSP_DAC_Init()
 {
 	// Enable GPIOA clock
@@ -473,13 +477,45 @@ void BSP_DAC_Init()
 	GPIOA->MODER &= ~GPIO_MODER_MODER4_Msk;
 	GPIOA->MODER |= (0x03 <<GPIO_MODER_MODER4_Pos);
 
+	// Enable DMA clock
+	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+
+	// Reset DMA1 Channel 3 (DAC) configuration
+	DMA1_Channel3->CCR = 0x00000000;
+
+	// Configure DMA1 Channel 3
+	// Memory -> Peripheral
+	// Peripheral is 16-bit, no increment
+	// Memory is 16-bit, increment
+	// Circular mode
+
+	DMA1_Channel3->CCR |= (0x01 <<DMA_CCR_PSIZE_Pos) | (0x01 <<DMA_CCR_MSIZE_Pos) | DMA_CCR_MINC | DMA_CCR_CIRC | DMA_CCR_DIR;
+
+	// Peripheral is DAC1 DHR12R1
+	DMA1_Channel3->CPAR = (uint32_t)&DAC1->DHR12R1;
+
+	// Memory is sine wavetable
+	DMA1_Channel3->CMAR = (uint32_t)sinewave;
+
+	// Set Memory Buffer size
+	DMA1_Channel3->CNDTR = 60;
+
+	// Enable DMA1 Channel 3
+	DMA1_Channel3->CCR |= DMA_CCR_EN;
+
 	// Enable DAC clock
 	RCC->APB1ENR |= RCC_APB1ENR_DACEN;
 
 	// Reset DAC configuration
 	DAC->CR = 0x00000000;
 
-	// Enable DAC Channel 1
+	// Enable DAC Channel 1 DMA request
+	DAC->CR |= DAC_CR_DMAEN1;
+
+	// Select and enable TIM6 TRGO event as DAC trigger source
+	DAC->CR |= (0x00 <<DAC_CR_TSEL1_Pos) | DAC_CR_TEN1;
+
+	// Enable Channel 1
 	DAC->CR |= DAC_CR_EN1;
 }
 

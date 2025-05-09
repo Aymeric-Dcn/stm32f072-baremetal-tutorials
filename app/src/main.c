@@ -31,41 +31,19 @@ uint16_t	adc_dma_buffer[3];
 // Main function
 int main()
 {
-	uint8_t		index;
-
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Initialize Console
-	BSP_Console_Init();
-	my_printf("Console Ready!\r\n");
-
 	// Initialize 60kHz timebase
 	BSP_TIMER_Timebase_Init();
-	BSP_NVIC_Init();
 
 	// Initialize DAC
 	BSP_DAC_Init();
 
-	// Initialize wavetable index
-	index = 0;
-
 	// Main loop
 	while(1)
 	{
-		// Do every sampling period
-		if(timebase_irq == 1)
-		{
-		    // Output a new sample
-                    DAC->DHR12R1 = sinewave[index];
-
-		    // Increment wavetable index
-                    index++;
-		    if (index==60) index = 0;
-
-		    // Reset timebase flag
-		    timebase_irq = 0;
-		}
+		// Do nothing...
 	}
 }
 
