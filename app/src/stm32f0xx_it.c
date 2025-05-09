@@ -164,3 +164,23 @@ void TIM6_DAC_IRQHandler()
 		timebase_irq = 1;
 	}
 }
+
+/*
+ * This function handles USART2 interrupts
+ */
+
+extern uint8_t	console_rx_byte;
+extern uint8_t	console_rx_irq;
+
+void USART2_IRQHandler()
+{
+	// Test for RXNE pending interrupt
+	if ((USART2->ISR & USART_ISR_RXNE) == USART_ISR_RXNE)
+	{
+		// RXNE flags automatically clears when reading RDR.
+
+		// Store incoming byte
+		console_rx_byte = USART2->RDR;
+		console_rx_irq = 1;
+	}
+}

@@ -165,6 +165,10 @@ void BSP_Console_Init()
 	// Enable both Transmitter and Receiver
 	USART2->CR1 |= USART_CR1_TE | USART_CR1_RE;
 
+	// Enable interrupt on RXNE event
+	USART2->CR1 |= USART_CR1_RXNEIE;
+
+
 	// Enable USART2
 	USART2->CR1 |= USART_CR1_UE;
 }
@@ -449,6 +453,12 @@ void BSP_NVIC_Init()
 
 	// Enable TIM6 interrupts
 	NVIC_EnableIRQ(TIM6_DAC_IRQn);
+
+	// Set priority level 1 for USART2 interrupt
+	NVIC_SetPriority(USART2_IRQn, 1);
+
+	// Enable USART2 interrupts
+	NVIC_EnableIRQ(USART2_IRQn);
 }
 
 

@@ -9,6 +9,9 @@
 #include "stm32f0xx.h"
 #include "bsp.h"
 #include "main.h"
+#include "delay.h"
+#include <math.h>
+
 
 // Static functions
 static void SystemClock_Config (void);
@@ -16,44 +19,62 @@ static void SystemClock_Config (void);
 
 // Global variable
 uint16_t	ADC_result;
-uint8_t	button_irq = 0;
-uint8_t 	timebase_irq = 0;
-uint16_t rx_data = 0;
-
-#include "stm32f0xx.h"
-#include "bsp.h"
-#include "delay.h"
-#include <math.h>
-
-// Static functions
-static void SystemClock_Config(void);
-
-
+uint16_t 	rx_data = 0;
+uint8_t      button_irq = 0;
+uint8_t      timebase_irq = 0;
+uint8_t	     console_rx_byte;
+uint8_t	     console_rx_irq = 0;
 
 // Main function
 int main()
 {
-	uint8_t		rx_byte;
-
 	// Configure System Clock
 	SystemClock_Config();
+
+	// Initialize Button pin
+	BSP_PB_Init();
 
 	// Initialize Console
 	BSP_Console_Init();
 	my_printf("Console Ready!\r\n");
 
+	// Initialize timebase
+	BSP_TIMER_Timebase_Init();
+
+	// Initialize NVIC
+	BSP_NVIC_Init();
+
 	// Main loop
 	while(1)
 	{
-		// If there is something in USART RDR register
-		if ( (USART2->ISR & USART_ISR_RXNE) == USART_ISR_RXNE )
+		// Process button upon interrupt
+		if (button_irq == 1)
 		{
-			// Read and report the content of RDR
-			rx_byte = USART2->RDR;
-			my_printf("You've hit the '%c' key\r\n", rx_byte);
+			my_printf("#");
+			button_irq = 0;
+		}
+
+		// Process console incoming byte upon interrupt
+		if (console_rx_irq == 1)
+		{
+			my_printf("%c", console_rx_byte);
+			console_rx_irq = 0;
+		}
+
+		// Process main task upon timebase interrupt
+		if (timebase_irq == 1)
+		{
+			my_printf(".");
+			timebase_irq = 0;
 		}
 	}
 }
+
+
+
+
+
+
 
 
 
