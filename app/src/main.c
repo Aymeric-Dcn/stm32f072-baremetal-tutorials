@@ -37,27 +37,44 @@ int main()
 	// Configure System Clock
 	SystemClock_Config();
 
-	// Configure RTC Clock
-	BSP_RTC_Clock_Config();
-
-	// Set RTC time
-	now.hours   = 12;
-	now.minutes = 00;
-	now.seconds = 00;
-	BSP_RTC_SetTime(&now);
-
-	// Console init
-	BSP_Console_Init();
-	my_printf("\r\nConsole Ready!\r\n");
-
-	// LED init
+	// Peripheral Inits
 	BSP_LED_Init();
+	BSP_Console_Init();
+
+	my_printf("\r\n\n --- Program Starting Over ---\r\n");
+
+	// If this is a Power ON reset
+	if ( (RCC->CSR & RCC_CSR_PORRSTF_Msk) == RCC_CSR_PORRSTF )
+	{
+		my_printf("This is a Power ON reset\r\n");
+
+		// Setup RTC clock
+		BSP_RTC_Clock_Config();
+
+		// Setup RTC time to 12:00:00
+		now.hours   = 12;
+		now.minutes = 00;
+		now.seconds = 00;
+		BSP_RTC_SetTime(&now);
+
+		my_printf("RTC time has been reset to 12:00:00\r\n");
+	}
+
+	// If reset pin was held low
+	if ( (RCC->CSR & RCC_CSR_PINRSTF_Msk) == RCC_CSR_PINRSTF )
+	{
+		my_printf("Reset pin was low\r\n");
+		my_printf("RTC continues...\r\n");
+	}
+
+	// Clear reset flags for next reset
+	RCC->CSR |= RCC_CSR_RMVF;
 
 	// Main loop
 	while(1)
 	{
 	   BSP_RTC_GetTime(&now);
-       my_printf("RTC Time is %02d:%02d:%02d\r", now.hours, now.minutes, now.seconds);
+	   my_printf("RTC Time is %02d:%02d:%02d\r", now.hours, now.minutes, now.seconds);
 
 	   BSP_LED_Toggle();
 	   BSP_DELAY_ms(100);
