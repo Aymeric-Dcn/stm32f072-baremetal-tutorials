@@ -183,6 +183,9 @@ void BSP_Console_Init()
 	DMA1_Channel5->CNDTR = 8;
 	// DMA mode is circular
 	DMA1_Channel5->CCR |= DMA_CCR_CIRC;
+
+	// Enable DMA HT & TC interrupts
+	DMA1_Channel5->CCR |= DMA_CCR_HTIE | DMA_CCR_TCIE;
 	// Enable DMA1 Channel 5
 	DMA1_Channel5->CCR |= DMA_CCR_EN;
 	// Enable USART2 DMA Request on RX
@@ -472,6 +475,12 @@ void BSP_NVIC_Init()
 //
 //	// Enable USART2 interrupts
 //	NVIC_EnableIRQ(USART2_IRQn);
+
+	// Set priority level 1 for DMA1_Channel5 interrupts
+	NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 1);
+
+	// Enable DMA1_Channel5 interrupts
+	NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);
 }
 
 

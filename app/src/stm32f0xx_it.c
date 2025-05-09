@@ -184,3 +184,27 @@ void USART2_IRQHandler()
 		console_rx_irq++;
 	}
 }
+
+/*
+ * This function handles DMA1 Channel 5 (USART2 RX) interrupts
+ */
+extern uint8_t	rx_dma_irq;
+void DMA1_Channel4_5_6_7_IRQHandler()
+{
+	// Test for Channel 5 Half Transfer
+	if ((DMA1->ISR & DMA_ISR_HTIF5) == DMA_ISR_HTIF5)
+	{
+		// Clear the interrupt pending bit
+		DMA1->IFCR |= DMA_IFCR_CHTIF5;
+		// Set global variable
+		rx_dma_irq = 1;
+	}
+	// Test for Channel 5 Transfer Complete
+	if ((DMA1->ISR & DMA_ISR_TCIF5) == DMA_ISR_TCIF5)
+	{
+		// Clear the interrupt pending bit
+		DMA1->IFCR |= DMA_IFCR_CTCIF5;
+		// Set global variable
+		rx_dma_irq = 2;
+	}
+}

@@ -25,42 +25,56 @@ uint8_t      timebase_irq = 0;
 uint8_t	     console_rx_byte[10];
 uint8_t	     console_rx_irq = 0;
 uint8_t	  	 rx_dma_buffer[8];
+uint8_t rx_dma_irq = 0;
 
-// Main function
+// Main program
 int main()
 {
-	uint8_t		DMA_Counter;
 	uint8_t		index;
 	// Configure System Clock
 	SystemClock_Config();
 	// Initialize Console
 	BSP_Console_Init();
 	my_printf("Console Ready!\r\n");
-	// Initialize 1s timebase
-	BSP_TIMER_Timebase_Init();
+	// Initialize NVIC
 	BSP_NVIC_Init();
-	// Initialize variables
-	DMA_Counter = DMA1_Channel5->CNDTR;
-	index = DMA_Counter;
+	// Initialize the DMA interrupt flag
+	rx_dma_irq = 0;
 	// Main loop
 	while(1)
 	{
-		// Do every 1s
-		if(timebase_irq == 1)
+		// If some bytes have been received
+		if(rx_dma_irq !=0)
 		{
-			// Get actual DMA counter value
-			DMA_Counter = DMA1_Channel5->CNDTR;
-			// For all new received bytes
-			while (index != DMA_Counter)
+			switch(rx_dma_irq)
 			{
-				// Send byte to console
-				while ( (USART2->ISR & USART_ISR_TC) != USART_ISR_TC);
-				USART2->TDR = rx_dma_buffer[8-index];
-				// Circular index update
-				index--;
-				if (index == 0) index = 8;
+				case 1:	// Half Transfer (HT) Interruption Occurred
+				{
+					// Display bytes [0-3]
+					my_printf("HT->\"");
+					for (index=0; index<4; index++)
+					{
+					  while ( (USART2->ISR & USART_ISR_TC) != USART_ISR_TC);
+					  USART2->TDR = rx_dma_buffer[index];
+					}
+					my_printf("\"\r\n");
+					break;
+				}
+				case 2:	// Transfer Complete (TC) Interruption Occurred
+				{
+					// Display bytes [4-7]
+					my_printf("TC->\"");
+					for (index=4; index<8; index++)
+					{
+					  while ( (USART2->ISR & USART_ISR_TC) != USART_ISR_TC);
+					  USART2->TDR = rx_dma_buffer[index];
+					}
+					my_printf("\"\r\n");
+					break;
+				}
 			}
-			timebase_irq = 0;
+			// Reset the DMA interrupt flag
+			rx_dma_irq = 0;
 		}
 	}
 }
