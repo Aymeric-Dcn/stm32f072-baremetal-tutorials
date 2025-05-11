@@ -82,6 +82,9 @@ int main()
 			// Stop measure
 			BSP_LED_Off();
 			timebase_irq = 0;
+
+			// Go into Sleep mode
+			__WFI();
 		}
 	}
 }
