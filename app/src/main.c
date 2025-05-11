@@ -39,7 +39,10 @@ int main()
 	float y = 0;	// Filter output
 
 	// Configure System Clock
-        SystemClock_Config();
+    //SystemClock_Config();
+
+	// Set HPRE to /16 -> 500kHz MCU clock
+	RCC->CFGR |= RCC_CFGR_HPRE_DIV16;
 
 	// Initialize 10ms timebase
 	BSP_TIMER_Timebase_Init();

@@ -260,9 +260,17 @@ void BSP_TIMER_Timebase_Init()
 	TIM6->CR1 = 0x0000;
 	TIM6->CR2 = 0x0000;
 
+	//remember to uncomment this code with the 48MHz clk
 	// Set TIM6 prescaler
 	// Fck = 48MHz -> /48000 = 1kHz counting frequency
-	TIM6->PSC = (uint16_t) 48000 -1;
+	//TIM6->PSC = (uint16_t) 48000 -1;
+
+
+	//code to be commented as the clock generally runs at 48MHz
+	// Set TIM6 prescaler
+	// Fck = 500kHz -> /500 = 1kHz counting frequency
+	TIM6->PSC = (uint16_t) 500 -1;
+
 
 	// Set TIM6 auto-reload register for 10ms
 	TIM6->ARR = (uint16_t) 10 -1;
