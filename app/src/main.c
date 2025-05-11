@@ -67,6 +67,11 @@ int main()
 			// Start measure
 			BSP_LED_On();
 
+			// Enable DAC & ADC
+			RCC->APB1ENR |= RCC_APB1ENR_DACEN;
+			RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+			ADC1->CR |= ADC_CR_ADEN;
+
 			// Input signal <-- ADC
 			while ( (ADC1->ISR & ADC_ISR_EOC) != ADC_ISR_EOC );
 			in = ADC1->DR;
@@ -82,6 +87,11 @@ int main()
 			// Stop measure
 			BSP_LED_Off();
 			timebase_irq = 0;
+
+			// Disable DAC & ADC
+			ADC1->CR &= ~ADC_CR_ADEN;
+			RCC->APB2ENR &= ~RCC_APB2ENR_ADC1EN;
+			RCC->APB1ENR &= ~RCC_APB1ENR_DACEN;
 
 			// Go into Sleep mode
 			__WFI();
