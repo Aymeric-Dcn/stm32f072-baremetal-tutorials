@@ -55,7 +55,10 @@ int main()
 	BSP_DAC_Init();
 
 	// Initialize LED pin
-	BSP_LED_Init();
+	//BSP_LED_Init();
+
+	// Initialize debug pin
+	BSP_DBG_Pin_Init();
 
 	// Setup filter coefs
 	c1 = 0.11765f;
@@ -68,7 +71,8 @@ int main()
 		if (timebase_irq == 1)
 		{
 			// Start measure
-			BSP_LED_On();
+			//BSP_LED_On();
+			GPIOA->BSRR = GPIO_BSRR_BS_6;
 
 			// Enable DAC & ADC
 			RCC->APB1ENR |= RCC_APB1ENR_DACEN;
@@ -88,7 +92,9 @@ int main()
 			DAC->DHR12R1 = out;
 
 			// Stop measure
-			BSP_LED_Off();
+			//BSP_LED_Off();
+			GPIOA->BSRR = GPIO_BSRR_BR_6;
+
 			timebase_irq = 0;
 
 			// Disable DAC & ADC

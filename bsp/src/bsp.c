@@ -861,3 +861,32 @@ void BSP_LPS25H_Write(uint8_t register_address, uint8_t data)
 	GPIOC->BSRR = GPIO_BSRR_BS_7;
 }
 
+
+/*
+ * BSP_DBG_Pin_Init()
+ * Initialize Debug pin (PA6) as a High-Speed Push-Pull output
+ * Set pin initial state to OFF
+ */
+
+void BSP_DBG_Pin_Init()
+{
+	// Enable GPIOA clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+
+	// Configure PA6 as output
+	GPIOA->MODER &= ~GPIO_MODER_MODER6_Msk;
+	GPIOA->MODER |= (0x01 <<GPIO_MODER_MODER6_Pos);
+
+	// Configure PA6 as Push-Pull output
+	GPIOA->OTYPER &= ~GPIO_OTYPER_OT_6;
+
+	// Configure PA6 as High-Speed Output
+	GPIOA->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR6_Msk;
+	GPIOA->OSPEEDR |= (0x03 <<GPIO_OSPEEDR_OSPEEDR6_Pos);
+
+	// Disable PA6 Pull-up/Pull-down
+	GPIOA->PUPDR &= ~GPIO_PUPDR_PUPDR6_Msk;
+
+	// Set Initial State OFF
+	GPIOA->BSRR |= GPIO_BSRR_BR_6;
+}

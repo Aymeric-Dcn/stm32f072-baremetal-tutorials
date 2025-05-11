@@ -99,7 +99,12 @@ void BSP_LPS25H_Read	(uint8_t register_address,
 							uint8_t *buffer,
 							uint8_t nbytes);
 
-void BSP_LPS25H_Write(uint8_t register_address,
-						uint8_t data);
+void BSP_LPS25H_Write	(uint8_t register_address,
+							uint8_t data);
 
+/*
+ * Debug function for low-power
+ */
+
+void BSP_DBG_Pin_Init	(void);
 #endif /* INC_BSP_H_ */
