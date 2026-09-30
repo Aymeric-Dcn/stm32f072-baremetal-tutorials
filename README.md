@@ -41,7 +41,7 @@ The I2C and SPI tutorials need external sensors wired to the board.
 ## Getting started
 
 ```bash
-git clone https://github.com/<you>/stm32f072-baremetal-tutorials.git
+git clone https://github.com/Aymeric-Dcn/stm32f072-baremetal-tutorials.git
 ```
 
 Then in STM32CubeIDE: **File → Import → General → Existing Projects into Workspace**, select the cloned folder, and build. All paths in the project are relative, so the folder can live anywhere.
