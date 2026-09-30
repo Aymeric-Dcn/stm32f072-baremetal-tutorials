@@ -38,11 +38,11 @@ int main()
 	float x = 0;	// Filter input
 	float y = 0;	// Filter output
 
-	// Configure System Clock
-    //SystemClock_Config();
+	//Configure System Clock
+    SystemClock_Config();
 
-	// Set HPRE to /16 -> 500kHz MCU clock
-	RCC->CFGR |= RCC_CFGR_HPRE_DIV16;
+	// Low-power tutorial only: set HPRE to /16 -> 500kHz MCU clock (disabled, running at 48MHz)
+	// RCC->CFGR |= RCC_CFGR_HPRE_DIV16;
 
 	// Initialize 10ms timebase
 	BSP_TIMER_Timebase_Init();
@@ -55,7 +55,7 @@ int main()
 	BSP_DAC_Init();
 
 	// Initialize LED pin
-	//BSP_LED_Init();
+	BSP_LED_Init();
 
 	// Initialize debug pin
 	BSP_DBG_Pin_Init();
